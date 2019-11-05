@@ -21,10 +21,10 @@ function checkReqMethod(){
 
 
 
- $servername = "localhost";
-    $username = "xplor4br_mrm";
-    $password = "K{NC8io_~lV8";
-    $database = "xplor4br_mrm";
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $database = "mrm";
     
     $conn = new mysqli($servername, $username, $password,$database);
     
@@ -582,52 +582,52 @@ function addCustomerAddress()
     }
 }
 
-function deleteCustomerAddress()
-{
-    $input = json_decode(file_get_contents('php://input'), true);
-    $userid = (int) $input['user_id'];
-    $address_id = (int)$input['address_id'];
+// function deleteCustomerAddress()
+// {
+//     $input = json_decode(file_get_contents('php://input'), true);
+//     $userid = (int) $input['user_id'];
+//     $address_id = (int)$input['address_id'];
 
-    $conn = $GLOBALS['conn'];
+//     $conn = $GLOBALS['conn'];
     
-                //CHECK FOR BLOCKED CUSTOMER
-                $check = mysqli_query($conn, "SELECT * FROM user WHERE id = $userid AND account_status = 'BLOCKED' ");
-                if(mysqli_num_rows($check)>0){
-                    $errorData["data"] = array("status"=>0,   "message" => "This customer Account is Blocked");
-                    echo json_encode($errorData);
-                    die();
-                }
-            //END oF BLOCKED
+//                 //CHECK FOR BLOCKED CUSTOMER
+//                 $check = mysqli_query($conn, "SELECT * FROM user WHERE id = $userid AND account_status = 'BLOCKED' ");
+//                 if(mysqli_num_rows($check)>0){
+//                     $errorData["data"] = array("status"=>0,   "message" => "This customer Account is Blocked");
+//                     echo json_encode($errorData);
+//                     die();
+//                 }
+//             //END oF BLOCKED
             
             
 
-    validateUserId($conn, $userid);
+//     validateUserId($conn, $userid);
 
-    $check = mysqli_query($conn, "SELECT * FROM user_address WHERE user_id = $userid AND id = $address_id LIMIT 1");
+//     $check = mysqli_query($conn, "SELECT * FROM user_address WHERE user_id = $userid AND id = $address_id LIMIT 1");
 
-    if (mysqli_num_rows($check)!=1) {
-        $errorData["data"] = array("status"=>0,   "message" => "address_id not matching with user_id");
-        echo json_encode($errorData);
-        die();
-    }
-    $query = mysqli_query($conn, "DELETE FROM user_address WHERE user_id = $userid AND id = $address_id");
+//     if (mysqli_num_rows($check)!=1) {
+//         $errorData["data"] = array("status"=>0,   "message" => "address_id not matching with user_id");
+//         echo json_encode($errorData);
+//         die();
+//     }
+//     $query = mysqli_query($conn, "DELETE FROM user_address WHERE user_id = $userid AND id = $address_id");
 
 
-    if ($query) {
+//     if ($query) {
 
-        $response['data']=array("status"=>1, "message"=>"user address_id is deleted successfully");
-        echo json_encode($response);
-        die(mysqli_error($conn));
-    }
-    else {
-        $response['error'] = array(
-            'status' => 0,
-            'message' => 'Internal server error'
-        );
-        echo json_encode($response);
-        die(mysqli_error($conn));
-    }
-}
+//         $response['data']=array("status"=>1, "message"=>"user address_id is deleted successfully");
+//         echo json_encode($response);
+//         die(mysqli_error($conn));
+//     }
+//     else {
+//         $response['error'] = array(
+//             'status' => 0,
+//             'message' => 'Internal server error'
+//         );
+//         echo json_encode($response);
+//         die(mysqli_error($conn));
+//     }
+// }
 
 
 
@@ -1979,7 +1979,7 @@ function getInfoapi(){
     $errorData["data"] = array("status"=>0, "code" => 405, "message" => "This HTTP Method is Not Allowed");
     echo json_encode($errorData);
     header("HTTP/1.1 405");
-    die(mysqli_error($connect));
+    die(mysqli_error($conn));
 }
         
         $inputJSON = file_get_contents('php://input');
@@ -4243,12 +4243,355 @@ function deleteFromCartCount()
                 
                                 $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
                                 $cartrow = mysqli_fetch_assoc($cartcheck);
-                                $response["data"] = array(
-                                    "status" => 1,
-                                    "message" => "Item deleted from cart successfully",
-                                    "user_id" => $user_id,
-                                    "cartId" => (int) $cartrow['id'],
-                                    "estimate" => (int) $cartrow['estimate'],
-                                    "user_address_id" => (int) $cartrow['user_address_id'],
-                                    "date" => $cartrow['date'],
-             
+                                // $response["data"] = array(
+                                //     "status" => 1,
+                                //     "message" => "Item deleted from cart successfully",
+                                //     "user_id" => $user_id,
+                                //     "cartId" => (int) $cartrow['id'],
+                                //     "estimate" => (int) $cartrow['estimate'],
+                                //     "user_address_id" => (int) $cartrow['user_address_id'],
+                                //     "date" => $cartrow['date']
+                                // );
+                                }
+                            }
+                        }
+         }
+    }
+}
+///////////////////////////////////////////AFTER CHAOS//////////////////////////////////////////////////////////////////////
+
+function customerChoosePaymentType()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['payment_type'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No payment_type is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['payment_type'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No payment_type is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+
+    $user_id = (int) $input['user_id'];
+    $booking_id = (int) $input['booking_id'];
+    $payment_type = $input['payment_type'];
+    // // echo $payment_type;
+    // $type1 = "ONLINE";
+    // $type2 = "CASH";
+
+    // if (($payment_type!= $type1) || ($payment_type!= $type2)) {
+    //     // echo $payment_type;
+    //     $errorData["data"] = array("status" => 0,   "message" => "Invalid payment_type is supplied");
+    //     echo json_encode($errorData);
+    //     die();
+    // }
+
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    validateUserId($conn, $user_id);
+
+    $check = mysqli_query($conn, "SELECT * FROM booking WHERE user_id=$user_id AND id = $booking_id AND servicer_status IN('Completed') AND payment IN('PENDING')");
+    if (mysqli_num_rows($check) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Invalid inputs");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $q1 = mysqli_query($conn, "UPDATE booking SET payment_type = '$payment_type' WHERE user_id=$user_id AND id = $booking_id AND servicer_status IN('Completed') AND payment IN('PENDING') ");
+    
+
+    if ($q1) {
+
+        $check = mysqli_query($conn, "SELECT * FROM `booking` WHERE id=$booking_id AND payment_type='' ");
+        if (mysqli_num_rows($check)) {
+            $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed. Server error!");
+            echo json_encode($errorData);
+            die();
+        }
+
+        $errorData["data"] = array("status" => 1,   "message" => "Payment type chosen successfully");
+        echo json_encode($errorData);
+        die();
+    } else {
+        $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed. Server error!");
+        echo json_encode($errorData);
+        die();
+    }
+}
+
+
+function deleteCustomerAddress(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['address_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No address_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['address_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No address_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+
+    $user_id = (int) $input['user_id'];
+    $address_id = (int) $input['address_id'];
+    
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    validateUserId($conn, $user_id);
+    validateUserIdAddressId($conn, $user_id, $address_id);
+
+    $check = mysqli_query($conn, "DELETE FROM user_address WHERE id = $address_id AND user_id = $user_id");
+    if($check){
+        $errorData["data"] = array("status" => 1,   "message" => "address_id deleted successfully");
+        echo json_encode($errorData);
+        die();
+    }
+    else{
+        $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+        echo json_encode($errorData);
+        die();
+    }
+
+
+    
+}
+function validateUserIdAddressId($conn, $user_id, $address_id){
+    // echo "SELECT id FROM user_address WHERE id = $address_id AND user_id = $user_id";
+    $check = mysqli_query($conn, "SELECT id FROM user_address WHERE id = $address_id AND user_id = $user_id");
+    if(mysqli_num_rows($check)==0){
+        $errorData["data"] = array("status" => 0,   "message" => "address_id and user_id mismatch");
+        echo json_encode($errorData);
+        die();
+    }
+    else{
+        return true;
+    }
+}
+
+function customerApplyWallet(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['use_wallet'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No use_wallet is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['use_wallet'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No use_wallet is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+
+    $user_id = (int) $input['user_id'];
+    $booking_id = (int) $input['booking_id'];
+    $use_wallet =  $input['use_wallet'];
+
+
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    validateUserId($conn, $user_id);
+
+    validateuserIdBookingId($conn, $user_id, $booking_id);
+
+    $check = mysqli_query($conn, "SELECT wallet_reduce, amount_payable FROM booking WHERE id = $booking_id AND user_id = $user_id AND payment IN ('PENDING')");
+    $a = mysqli_fetch_assoc($check);
+    $wallet_reduce = (int)$a['wallet_reduce'];
+    $amount_payable = (int) $a['amount_payable'];
+
+    if($use_wallet=='YES'){
+        if ($wallet_reduce > 0) {
+            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already applied");
+            echo json_encode($errorData);
+            die();
+        }
+
+        $wallet_balance = customerCheckWalletAvailable($conn, $user_id);
+
+        if ($wallet_balance <= 0) {
+            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance is 0");
+            echo json_encode($errorData);
+            die();
+        }
+
+        if($amount_payable<=$wallet_balance){
+            $wallet_balance_used = $wallet_balance-$amount_payable;
+        }
+        else if($amount_payable > $wallet_balance){
+            $wallet_balance_used = $wallet_balance;
+        }
+        $amount_payable_updated = $amount_payable- $wallet_balance_used;
+
+        $q1 = mysqli_query($conn, "INSERT INTO user_wallet(user_id, amount, booking_id, type, description)
+                                    VALUES($user_id, $wallet_balance_used, $booking_id, 'debit', 'Debited for booking ID $booking_id')");
+        $q2 = mysqli_query($conn,"UPDATE booking SET wallet_reduce = $wallet_balance_used, amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id = $user_id");
+        
+        if($q1 && $q2){
+            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance applied successfully");
+            echo json_encode($errorData);
+            die();
+        }
+        else{
+            $errorData["data"] = array("status" => 0,   "message" => "internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+    else if($use_wallet=='NO'){
+        if ($wallet_reduce == 0) {
+            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already removed");
+            echo json_encode($errorData);
+            die();
+        }
+        $zz = mysqli_query($conn, "SELECT id,amount FROM user_wallet WHERE booking_id = $booking_id AND user_id = $user_id  ");
+        $yy = mysqli_fetch_assoc($zz);
+        $deleteId = (int)$yy['id'];
+        $amount = (int)$yy['amount'];
+
+        $amount_payable_updated = $amount_payable+$amount;
+        $q1 = mysqli_query($conn, "DELETE FROM user_wallet WHERE id = $deleteId AND booking_id = $booking_id AND user_id = $user_id");
+        $q2 = mysqli_query($conn, "UPDATE booking SET wallet_reduce = 0, amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id = $user_id");
+
+        if ($q1 && $q2) {
+            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance removed successfully");
+            echo json_encode($errorData);
+            die();
+        } else {
+            $errorData["data"] = array("status" => 0,   "message" => "internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+
+
+
+
+}
+
+function validateuserIdBookingId($conn, $user_id, $booking_id){
+    $check = mysqli_query($conn, "SELECT id FROM booking WHERE id = $booking_id AND user_id = $user_id");
+    if(mysqli_num_rows($check)==0){
+        $errorData["data"] = array("status" => 0,   "message" => "booking_id and user_id mismatch");
+        echo json_encode($errorData);
+        die();
+    }
+    else {
+        return true;
+    }
+}
+
+function customerCheckWalletAvailable($conn, $user_id){
+    $credits = mysqli_query($conn, "SELECT SUM(amount) AS credits FROM user_wallet WHERE user_id=$user_id  AND type='credit'");
+    $a = mysqli_fetch_assoc($credits);
+    $total_credits = (int)$a['credits'];
+    $debits = mysqli_query($conn, "SELECT SUM(amount) AS debits FROM user_wallet WHERE user_id=$user_id  AND type='debit'");
+    $a = mysqli_fetch_assoc($debits);
+    $total_debits = (int) $a['debits'];
+
+    $available_balance = $total_credits - $total_debits;
+    
+    if ($available_balance<=0) {
+        return 0;
+    } else {
+        return $available_balance;
+    }
+}
