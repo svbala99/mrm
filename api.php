@@ -4825,3 +4825,97 @@ function helpCenter()
     echo json_encode($response);
     die();
 }
+
+// 18 : View Cart
+function viewCart()
+{
+    $conn = $GLOBALS['conn'];
+    $user_id = $_GET["user_id"];
+
+    $cart = mysqli_query($conn, "SELECT 
+        cart.user_id AS user_id,
+        cart.id AS cartId,
+        cart.estimate AS estimate,
+        cart.user_address_id AS user_address_id,
+        cart.date AS date,
+        cart.slot_id AS slot_id,
+        cart.home_category_id AS home_category_id
+        FROM cart 
+        WHERE cart.user_id = $user_id");
+    if($cart_row = mysqli_fetch_assoc($cart)){
+        $home_category_id = (int) $cart_row["home_category_id"];
+        $cart_id = (int) $cart_row["cartId"];
+
+        if($home_category_id == 1){
+            $cart_items = [];
+            $cart_items_result = mysqli_query($conn, "SELECT 
+                cart_item.id AS cartItemId,
+                cart_item.product_id AS productId,
+                products.product_title AS productTitle,
+                products.product_description AS productDescription,
+                main_categories.name AS mainCategoryName,
+                cart_item.count AS count,
+                cart_item.price AS price
+                FROM cart_item
+                INNER JOIN products
+                ON cart_item.product_id = products.id
+                LEFT JOIN main_categories
+                ON cart_item.main_category_id = main_categories.id
+                WHERE cart_item.cart_id = $cart_id");
+            
+            while($cart_item_row = mysqli_fetch_assoc($cart_items_result)){
+                $cart_items[] = $cart_item_row;
+            }
+
+            $errorData["data"] = array(
+                "status" => 1,
+                "message" => "cart for the user",
+                "user_id" => (int) $user_id,
+                "cartId" => (int) $cart_row["cartId"],
+                "estimate" => (int) $cart_row["estimate"],
+                "user_address_id" => (int) $cart_row["user_address_id"],
+                "date" => $cart_row["date"],
+                "slot_id" => (int) $cart_row["slot_id"],
+                "cartItems" => $cart_items
+            );
+            echo json_encode($errorData);
+            die();
+        }
+        else{
+            $details = mysqli_query($conn, "SELECT
+            mc.name AS main_category_name,
+            cart_item.main_category_id AS main_category_id,
+            cart_item.price AS estimate,
+            cart_item.count AS count,
+            hc.tax_percent AS tax_percent,
+            ROUND(hc.tax_percent * cart_item.price / 100) AS tax_amount,
+            CONCAT(mc.name,' (For ',rv.visits,' ', IF(mc.division = 'A', 'Services', 'Visits'),' per year)') AS description,
+            rv.visits AS visits
+            FROM cart_item
+            INNER JOIN main_categories mc
+            ON cart_item.main_category_id = mc.id
+            INNER JOIN rate_visits rv
+            ON mc.id = rv.main_category_id
+            INNER JOIN home_categories hc
+            ON hc.id = mc.home_category_id
+            WHERE cart_item.cart_id = 452 
+            ORDER BY rv.visits ASC
+            LIMIT 1");
+            if($details_row = mysqli_fetch_assoc($details)){
+                $details_row["status"] = 1;
+                $details_row["message"] = "cart for the user";
+                $details_row["type"] = 2;
+                $details_row["user_id"] = (int) $user_id;
+                $details_row["cartId"] = (int) $cart_id;
+                $details_row["main_category_id_chosen"] = 0;
+                echo json_encode(array("data" => $details_row));
+                die();
+            }
+        }
+    }
+    else{
+        $errorData["data"] = array("status" => 0,   "message" => "Cart is empty");
+        echo json_encode($errorData);
+        die();
+    }
+}
