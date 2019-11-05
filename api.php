@@ -4781,3 +4781,47 @@ function clearCart()
         die();
     }
 }
+
+// 35 : Help Topics and answers
+function helpCenter()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+    $cat_id_index_map = [];
+    $main_categories = [];
+
+    
+    $sub_topics = mysqli_query($conn, "SELECT 
+        sub.id AS sub_cat_id, sub.sub_title AS sub_topic, sub.description AS description,
+        main.id AS main_cat_id, main.title AS name
+        FROM help_center_qa AS sub 
+        INNER JOIN help_center_title AS main
+        ON sub.help_id = main.id
+        WHERE main.display = 'YES' AND sub.display = 'YES'");
+
+    while ($row = mysqli_fetch_assoc($sub_topics)) {
+        $main_cat_id = $row["main_cat_id"];
+        $name = $row["name"];
+
+        $sub_category = array(
+            "sub_cat_id" => $row["sub_cat_id"],
+            "sub_topic" => $row["sub_topic"],
+            "description" => $row["description"]
+        );
+
+        if(isset($cat_id_index_map[$main_cat_id])){
+            $main_categories[$cat_id_index_map[$main_cat_id]]["sub_categories"][] = $sub_category;
+        }
+        else{
+            $main_categories[] = array(
+                "main_cat_id" => $main_cat_id,
+                "name" => $name,
+                "sub_categories" => array($sub_category)
+            );
+        }
+    }
+
+    $response["data"] = array("status" => 1, "message" => "Help topics found", "main_categories" => $main_categories);
+    echo json_encode($response);
+    die();
+}
