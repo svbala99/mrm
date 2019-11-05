@@ -19,12 +19,18 @@ function checkReqMethod()
     }
 }
 
-
-
+$production = true;
 $servername = "localhost";
 $username = "root";
 $password = "";
 $database = "mrm";
+
+if($production){
+    $servername = "localhost";
+    $username = "xplor4br_mrm";
+    $password = "K{NC8io_~lV8";
+    $database = "xplor4br_mrm";
+}
 
 $conn = new mysqli($servername, $username, $password, $database);
 
