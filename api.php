@@ -19,7 +19,7 @@ function checkReqMethod()
     }
 }
 
-$production = false;
+$production = true;
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -3769,7 +3769,7 @@ function addToCartCount()
             }
         }
     } else if ($type == '2B') {
-        ////////////////////////////////////////////////////////////////HOME TYPE 3//////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////HOME TYPE 2B//////////////////////////////////////////////////////////////
 
 
         if (!isset($input['choose'])) {
@@ -3786,6 +3786,7 @@ function addToCartCount()
             die();
         }
         $tariff_id = (int) $input['tariff_id'];
+        
 
 
         $test = mysqli_query($conn, "SELECT mc.home_category_id, mc.division FROM main_categories mc
@@ -4170,8 +4171,8 @@ function deleteFromCartCount()
                             "slot_id" => (int) $cartrow['slot_id'],
                             "cartItems" => $cartitems
                         );
-                        echo json_encode($response);
-                        die(mysqli_error($conn));
+                          echo json_encode($response);
+                          die(mysqli_error($conn));
                     }
                 }
             }
@@ -4779,6 +4780,246 @@ function clearCart()
     }
     //END oF BLOCKED
     validateUserId($conn, $user_id);
+    
+    if(isset($input['type'])){
+        $type = $input['type'];
+            if (empty($input['type'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No type is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+        if($type=='1'){
+            ////////////////////////////////////clear cart and add type 1////////////////////////////
+                        ////////////////////clear cart/////////////////////////////
+                        $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
+                        ///////////////////add type 1///////////////////////////////////////////
+                                             ////////////////////////////////////////////////////////////////HOME TYPE 1//////////////////////////////////////////////////////////////
+                            if (!isset($input['product_id'])) {
+                                $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
+                                echo json_encode($errorData);
+                                die();
+                            }
+                            if (empty($input['product_id'])) {
+                                $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
+                                echo json_encode($errorData);
+                    
+                                die();
+                            }
+                            $product_id = (int) $input['product_id'];
+                    
+                            $checkname = mysqli_query($conn, "SELECT product_title,price, product_description from products WHERE id = $product_id");
+                            $rrr = mysqli_fetch_assoc($checkname);
+                            $product_price = (int) $rrr['price'];
+                            $product_title = $rrr['product_title'];
+                            $product_description = $rrr['product_description'];
+                    
+                            $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
+                                                        INNER JOIN products p on p.category_id = sc.id AND p.id=$product_id ");
+                            $rw = mysqli_fetch_assoc($checkproductname);
+                            $mainCategoryName = $rw['name'];
+                    
+                                $updated = date('Y-m-d');
+                    
+                                $priceCheck = mysqli_query($conn, "SELECT price from products WHERE id = $product_id");
+                                $rw = mysqli_fetch_assoc($priceCheck);
+                                $price = (int) $rw['price'];
+                    
+                                $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
+                                            VALUES ($type, $user_id, $price )");
+                                $cart_id = (int) $conn->insert_id;
+                    
+                                $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, product_id, count,price) 
+                                            VALUES ( $cart_id, $product_id, 1, $price)");
+                                $cart_item_id =  (int) $conn->insert_id;
+                                if ($res and $res1) {
+                                    $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
+                                    while ($rw = mysqli_fetch_assoc($cartitemcheck)) {
+                                        $cartitems[] = array(
+                                            "cartItemId" => (int) $rw['id'],
+                                            "productId" => (int) $rw['product_id'],
+                                            "productTitle" => $product_title,
+                                            "productDescription" => $product_description,
+                                            "mainCategoryName" => $mainCategoryName,
+                                            "count" => (int) $rw['count'],
+                                            "price" => (int) $rw['price']
+                                        );
+                                    }
+                    
+                                    $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
+                                    while ($rw = mysqli_fetch_assoc($cartcheck)) {
+                                        $response["data"] = array(
+                                            "status" => 1,
+                                            "message" => "Item added to cart successfully",
+                                            "type" => $type,
+                                            "user_id" => $user_id,
+                                            "cartId" => (int) $rw['id'],
+                                            "estimate" => (int) $rw['estimate'],
+                                            "user_address_id" => (int) $rw['user_address_id'],
+                                            "date" => $rw['date'],
+                                            "slot_id" => (int) $rw['slot_id'],
+                                            "cartItems" => $cartitems
+                                        );
+                                        echo json_encode($response);
+                                        die(mysqli_error($conn));
+                                    }
+                                }
+                                //
+                                else {
+                                    $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in serverr");
+                                    echo json_encode($errorData);
+                    
+                                    die(mysqli_error($conn));
+                                }
+                        //////////////////end of add type 1
+        }
+                else if ($type == '2') {
+                ////////////////////////////////////////////////////////////////HOME TYPE 2//////////////////////////////////////////////////////////////
+                             ////////////////////clear cart/////////////////////////////
+                $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
+                
+                if (!isset($input['tariff_id'])) {
+                    $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
+                    echo json_encode($errorData);
+                    die();
+                }
+                $tariff_id = (int) $input['tariff_id'];
+        
+                $test = mysqli_query($conn, "SELECT mc.home_category_id FROM main_categories mc
+                                                                INNER JOIN rate_visits rv ON rv.main_category_id=mc.id
+                                                                WHERE rv.id = $tariff_id");
+                $row = mysqli_fetch_assoc($test);
+                $home_category_id = (int) $row['home_category_id'];
+                if ($home_category_id != $type) {
+                    $errorData["data"] = array("status" => 0,   "message" => "This tariff_id is not from type 2");
+                    echo json_encode($errorData);
+                    die();
+                }
+        
+                if (!isset($input['quantity'])) {
+                    $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
+                    echo json_encode($errorData);
+                    die();
+                }
+                $quantity = (int) $input['quantity'];
+                if ($quantity < 1) {
+                    $errorData["data"] = array("status" => 0,   "message" => "quantity is less than 1");
+                    echo json_encode($errorData);
+                    die();
+                }
+                    /////////////////////////////////////////////cart is free for this user///////////////////////////////////////////////////////
+                    $priceCheck = mysqli_query($conn, "SELECT rate,visits,main_category_id from rate_visits WHERE id = $tariff_id");
+                    if (mysqli_num_rows($priceCheck) == 0) {
+                        $errorData["data"] = array("status" => 0,   "message" => "No tariff available for this details");
+                        echo json_encode($errorData);
+                        die();
+                    }
+                    $rw = mysqli_fetch_assoc($priceCheck);
+                    $visits = (int) $rw['visits'];
+                    $main_category_id = (int) $rw['main_category_id'];
+        
+        
+                    $ratePerQuantity = (int) $rw['rate'];
+                    $estimate = $ratePerQuantity * $quantity;
+        
+                    $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
+                                            VALUES ($type, $user_id, $estimate )");
+                    $cart_id = (int) $conn->insert_id;
+        
+                    $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, main_category_id, count, price,visits) 
+                                            VALUES ( $cart_id, $main_category_id, $quantity, $estimate, $visits)");
+                    $cart_item_id =  (int) $conn->insert_id;
+                    if ($res and $res1) {
+                        $response["data"] = array(
+                            "status" => 1,
+                            "message" => "Type 2A Item added to cart successfully",
+                            "type" => $type
+                        );
+                        echo json_encode($response);
+                        die(mysqli_error($conn));
+                    }
+                    //
+                    else {
+                        $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in server");
+                        echo json_encode($errorData);
+        
+                        die(mysqli_error($conn));
+                    }
+            } 
+            
+                                else if ($type == '2B') {
+                            ////////////////////////////////////////////////////////////////HOME TYPE 2B//////////////////////////////////////////////////////////////
+                                                 ////////////////////clear cart/////////////////////////////
+                                        $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
+                
+                            if (!isset($input['tariff_id'])) {
+                                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
+                                echo json_encode($errorData);
+                                die();
+                            }
+                            if (empty($input['tariff_id'])) {
+                                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
+                                echo json_encode($errorData);
+                                die();
+                            }
+                            $tariff_id = (int) $input['tariff_id'];
+                            
+                            if (!isset($input['quantity'])) {
+                                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
+                                echo json_encode($errorData);
+                                die();
+                            }
+                            if (empty($input['quantity'])) {
+                                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
+                                echo json_encode($errorData);
+                                die();
+                            }
+                            $quantity = (int) $input['quantity'];
+                    
+                                //cart is free for this user///////////////////////////////////////////////////////
+                                $priceCheck = mysqli_query($conn, "SELECT rate,visits,main_category_id from rate_visits WHERE id = $tariff_id");
+                                if (mysqli_num_rows($priceCheck) == 0) {
+                                    $errorData["data"] = array("status" => 0,   "message" => "No tariff available for this details");
+                                    echo json_encode($errorData);
+                                    die();
+                                }
+                                $rw = mysqli_fetch_assoc($priceCheck);
+                                $visits = (int) $rw['visits'];
+                                $main_category_id = (int) $rw['main_category_id'];
+                    
+                    
+                                $ratePerQuantity = (int) $rw['rate'];
+                                // echo $ratePerQuantity."    ".$quantity;
+                                $estimate = $ratePerQuantity * $quantity;
+                    
+                    
+                    
+                                $home_category_id = substr($type, 0, 1);
+                    
+                                $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
+                                                        VALUES ($home_category_id, $user_id, $estimate )");
+                                $cart_id = (int) $conn->insert_id;
+                    
+                                $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, main_category_id, count, price,visits) 
+                                                        VALUES ( $cart_id, $main_category_id, $quantity, $estimate, $visits)");
+                                $cart_item_id =  (int) $conn->insert_id;
+                                if ($res and $res1) {
+                                    $response["data"] = array(
+                                        "status" => 1,
+                                        "message" => "Type 2B Item added to cart successfully",
+                                        "type" => $type
+                                    );
+                                    echo json_encode($response);
+                                    die(mysqli_error($conn));
+                                }
+                                //
+                                else {
+                                    $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in server");
+                                    echo json_encode($errorData);
+                    
+                                    die(mysqli_error($conn));
+                                }
+                        }
+    }
 
     $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
     if ($q1) {
@@ -5113,38 +5354,10 @@ function customerConfirmAddress()
 }
 
 
+
 function cartSummary()
 {
     $conn = $GLOBALS['conn'];
-
-    $input = json_decode(file_get_contents('php://input'), true);
-
-
-    if (!isset($_GET['user_id'])) {
-        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
-        echo json_encode($errorData);
-
-        die();
-    }
-    if (empty($_GET['user_id'])) {
-        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
-        echo json_encode($errorData);
-
-        die();
-    }
-
-    //CHECK FOR BLOCKED CUSTOMER
-    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
-    if (mysqli_num_rows($checkk) > 0) {
-        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
-        echo json_encode($errorData);
-        die();
-    }
-    //END oF BLOCKED
-
-    $user_id = (int) $_GET['user_id'];
-
-    validateUserId($conn, $user_id);
 
     $user_id = (int) $_GET['user_id'];
 
@@ -5220,6 +5433,7 @@ function cartSummary()
   
 }
 
+
 function type23Tariff(){
     $conn = $GLOBALS['conn'];
 
@@ -5292,3 +5506,4 @@ function customerChooseServiceList(){
     echo json_encode($response);
     die();
 }
+
