@@ -5507,3 +5507,154 @@ function customerChooseServiceList(){
     die();
 }
 
+
+function deleteProductFromCart(){
+    $conn = $GLOBALS['conn'];
+    
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $input['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    if (!isset($input['product_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['product_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $product_id = (int) $input['product_id'];
+    
+    if (!isset($input['cart_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No cart_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['cart_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No cart_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $cart_id = (int) $input['cart_id'];
+    $checkcart = mysqli_query($conn, "SELECT * from cart WHERE user_id = $user_id");
+
+
+    if (mysqli_num_rows($checkcart) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "There is no cart items for this user.");
+        echo json_encode($errorData);
+        die(mysqli_error($conn));
+    }
+    else  if (mysqli_num_rows($checkcart) > 0) {
+        $abc = mysqli_fetch_assoc($checkcart);
+
+        $cartitemscounthere = mysqli_query($conn, "SELECT * FROM cart_item WHERE cart_id = $cart_id");
+        if (mysqli_num_rows($cartitemscounthere) == 1) {
+            //only this product is in cart
+            $checkcartitem = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id = $cart_id  AND product_id = $product_id LIMIT 1 ");
+            if (mysqli_num_rows($checkcartitem) == 0) {
+                $errorData["data"] = array("status" => 0,   "message" => "This product is not in the cart for current user.");
+                echo json_encode($errorData);
+
+                die(mysqli_error($conn));
+            }
+            //
+            else if (mysqli_num_rows($checkcartitem) == 1) {
+                $checkcartitemcount = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id = $cart_id  AND product_id = $product_id ");
+                mysqli_query($conn, "DELETE FROM cart WHERE id = $cart_id");
+                $response["data"] = array("status" => 2, "message" => "Item deleted successfully, cart is empty now", "cart" => array());
+                echo json_encode($response);
+                die(mysqli_error($conn));
+                
+            }
+        }
+        //
+        else if (mysqli_num_rows($cartitemscounthere) > 1) {
+            
+            /////////////////////////////////not only this item, some other items also there in cart for this user
+            $checkcartitem = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id = $cart_id  AND product_id = $product_id LIMIT 1 ");
+            if (mysqli_num_rows($checkcartitem) == 0) {
+                $errorData["data"] = array("status" => 0,   "message" => "This product is not in the cart for current user.");
+                echo json_encode($errorData);
+
+                die(mysqli_error($conn));
+            }
+            //
+            else if (mysqli_num_rows($checkcartitem) == 1) {
+                $checkcartitemcount = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id = $cart_id  AND product_id = $product_id ");
+                $xyz = mysqli_fetch_assoc($checkcartitemcount);
+                $price = (int) $xyz['price'];
+                    mysqli_query($conn, "DELETE FROM cart_item WHERE cart_id = $cart_id  AND product_id = $product_id");
+
+                    mysqli_query($conn, "UPDATE cart SET estimate = estimate-$price WHERE user_id = $user_id");
+
+                    $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
+                    $cartitems = [];
+                    while ($rrow = mysqli_fetch_assoc($cartitemcheck)) {
+                        $productId = (int) $rrow['product_id'];
+                        $checkname = mysqli_query($conn, "SELECT product_title, product_description from products WHERE id = $productId");
+                        $r = mysqli_fetch_assoc($checkname);
+                        $product_title = $r['product_title'];
+                        $product_description = $r['product_description'];
+
+                        $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
+                                                                INNER JOIN products p on p.category_id = sc.id AND p.id=$productId ");
+                        $rw = mysqli_fetch_assoc($checkproductname);
+                        $mainCategoryName = $rw['name'];
+
+                        $cartitems[] = array(
+                            "cartItemId" => (int) $rrow['id'],
+                            "productId" => (int) $rrow['product_id'],
+                            "productTitle" => $product_title,
+                            "productDescription" => $product_description,
+                            "mainCategoryName" => $mainCategoryName,
+                            "count" => (int) $rrow['count'],
+                            "price" => (int) $rrow['price']
+                        );
+                    }
+
+                    $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
+                    $cartrow = mysqli_fetch_assoc($cartcheck);
+                    $response["data"] = array(
+                        "status" => 1,
+                        "message" => "Item deleted from cart successfully",
+                        "user_id" => $user_id,
+                        "cartId" => (int) $cartrow['id'],
+                        "estimate" => (int) $cartrow['estimate'],
+                        "user_address_id" => (int) $cartrow['user_address_id'],
+                        "date" => $cartrow['date'],
+                        "slot_id" => (int) $cartrow['slot_id'],
+                        "cartItems" => $cartitems
+                    );
+                    echo json_encode($response);
+                    die(mysqli_error($conn));
+            }
+        }
+    }
+}
+?>
