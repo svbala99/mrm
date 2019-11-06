@@ -4159,15 +4159,19 @@ function deleteFromCartCount()
 
                         $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
                         $cartrow = mysqli_fetch_assoc($cartcheck);
-                        // $response["data"] = array(
-                        //     "status" => 1,
-                        //     "message" => "Item deleted from cart successfully",
-                        //     "user_id" => $user_id,
-                        //     "cartId" => (int) $cartrow['id'],
-                        //     "estimate" => (int) $cartrow['estimate'],
-                        //     "user_address_id" => (int) $cartrow['user_address_id'],
-                        //     "date" => $cartrow['date']
-                        // );
+                        $response["data"] = array(
+                            "status" => 1,
+                            "message" => "Item deleted from cart successfully",
+                            "user_id" => $user_id,
+                            "cartId" => (int) $cartrow['id'],
+                            "estimate" => (int) $cartrow['estimate'],
+                            "user_address_id" => (int) $cartrow['user_address_id'],
+                            "date" => $cartrow['date'],
+                            "slot_id" => (int) $cartrow['slot_id'],
+                            "cartItems" => $cartitems
+                        );
+                        echo json_encode($response);
+                        die(mysqli_error($conn));
                     }
                 }
             }
