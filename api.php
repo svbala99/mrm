@@ -4904,7 +4904,7 @@ function viewCart()
             ON mc.id = rv.main_category_id
             INNER JOIN home_categories hc
             ON hc.id = mc.home_category_id
-            WHERE cart_item.cart_id = 452 
+            WHERE cart_item.cart_id = $cart_id 
             ORDER BY rv.visits ASC
             LIMIT 1");
             if($details_row = mysqli_fetch_assoc($details)){
@@ -4924,4 +4924,226 @@ function viewCart()
         echo json_encode($errorData);
         die();
     }
+}
+
+function getHelp()
+{
+    $conn = $GLOBALS['conn'];
+    $mc_id = (int) $_GET['mc_id'];
+    $q = mysqli_query($conn, "SELECT home_category_id, division, how, about, image, name FROM `main_categories` WHERE id = $mc_id LIMIT 1 ");
+    if (mysqli_num_rows($q) > 0) {
+        $row = mysqli_fetch_assoc($q);
+        $rate = $row['rate'];
+        $how = $row['how'];
+        $about = $row['about'];
+        $image = $row['image'];
+
+        $home_category_id = (int) $row['home_category_id'];
+        $division = $row['division'];
+        $name = $row['name'];
+        
+        if($home_category_id==2&$division=='A'){
+            $q1 = mysqli_query($conn,"SELECT rate, visits FROM rate_visits WHERE main_category_id=$mc_id ORDER BY rate ASC LIMIT 1");
+            $aa = mysqli_fetch_assoc($q1);
+            $rate = (int)$aa['rate'];
+            $visits = (int)$aa['visits'];
+            $description = "Rs. ".$rate." per year / ".$visits." Services";
+        }
+        else if($home_category_id==2&$division=='B'){
+            $q1 = mysqli_query($conn,"SELECT rate, visits, minutes_per_visit FROM rate_visits WHERE main_category_id=$mc_id ORDER BY rate ASC LIMIT 1");
+            
+            $aa = mysqli_fetch_assoc($q1);
+            $rate = (int)$aa['rate'];
+            $visits = (int)$aa['visits'];
+            $minutes_per_visit = (int)$aa['minutes_per_visit'];
+            $hours = ($visits*$minutes_per_visit)/60;
+            $description = "Rs. ".$rate." per year / ".$visits."Visits / ".$hours." hours";
+        }
+        else{
+            $description='';
+        }
+        
+        
+
+        $response["data"] = array("status" => 1, "message" => "Help", "how" => $how, "about" => $about, "image" => $image, "name" => $name, "description"=>$description);
+        echo json_encode($response);
+        die();
+    } else {
+        $errorData["error"] = array("status" => 0, "code" => 400, "message" => "Category not found", "error" => mysqli_error($conn));
+        echo json_encode($errorData);
+        header("HTTP/1.1 400");
+        die();
+    }
+}
+
+function customerConfirmAddress()
+{
+    $conn = $GLOBALS['conn'];
+    
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    
+    $user_address_id = (int) $input['user_address_id'];
+    $user_id = (int) $input['user_id'];
+
+    validateUserId($conn, $user_id);
+
+    $addresscheck = mysqli_query($conn, "SELECT * from user_address WHERE id =$user_address_id ");
+    if (mysqli_num_rows($addresscheck)) {
+        $q1 = mysqli_query($conn, "SELECT * from cart WHERE user_id = $user_id");
+        if (mysqli_num_rows($q1)) {
+            $q2 = mysqli_query($conn, "UPDATE cart SET user_address_id =$user_address_id WHERE user_id= $user_id  ");
+            if ($q2) {
+                $rrr = mysqli_fetch_assoc($q1);
+                $cart_id = (int)$rrr['id'];
+                $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
+                $cartitems = [];
+                while ($rrow = mysqli_fetch_assoc($cartitemcheck)) {
+                    $productId = (int) $rrow['product_id'];
+                    $checkname = mysqli_query($conn, "SELECT product_title, product_description from products WHERE id = $productId");
+                    $r = mysqli_fetch_assoc($checkname);
+                    $product_title = $r['product_title'];
+                    $product_description = $r['product_description'];
+
+                    $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
+                                                                INNER JOIN products p on p.category_id = sc.id AND p.id=$productId ");
+                    $rw = mysqli_fetch_assoc($checkproductname);
+                    $mainCategoryName = $rw['name'];
+
+                    $cartitems[] = array(
+                        "cartItemId" => (int) $rrow['id'],
+                        "productId" => (int) $rrow['product_id'],
+                        "productTitle" => $product_title,
+                        "productDescription" => $product_description,
+                        "mainCategoryName" => $mainCategoryName,
+                        "count" => (int) $rrow['count'],
+                        "price" => (int) $rrow['price']
+                    );
+                }
+
+                $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
+                $cartrow = mysqli_fetch_assoc($cartcheck);
+                $response["data"] = array(
+                    "status" => 1,
+                    "message" => "Address confirmed and added to cart",
+                    "user_id" => $user_id,
+                    "cartId" => (int) $cartrow['id'],
+                    "estimate" => (int) $cartrow['estimate'],
+                    "user_address_id" => (int) $cartrow['user_address_id'],
+                    "date" => $cartrow['date'],
+                    "slot_id" => (int) $cartrow['slot_id'],
+                    "cartItems" => $cartitems
+                );
+                echo json_encode($response);
+                die(mysqli_error($conn));
+            }
+            //
+            else {
+                $errorData["error"] = array("status" => 0, "message" => "something went wrong in server");
+                echo json_encode($errorData);
+                
+                die(mysqli_error($conn));
+            }
+        }
+        //
+        else {
+            $q1 = mysqli_query($conn,"UPDATE user SET user_address_id = $user_address_id WHERE id = $user_id");
+            if($q1){
+                $errorData["error"] = array("status" => 1, "message" => "The selected address is stored for this user");
+                echo json_encode($errorData);
+                die(mysqli_error($conn));                    
+            }
+            else{
+                $errorData["error"] = array("status" => 0, "message" => "internal server error");
+                echo json_encode($errorData);
+                die(mysqli_error($conn));    
+            }
+            
+        }
+    }
+    //
+    else {
+        $errorData["error"] = array("status" => 0, "message" => "No such address available for this user.");
+        echo json_encode($errorData);
+        die(mysqli_error($conn));
+    }
+}
+
+
+function cartSummary()
+{
+    $conn = $GLOBALS['conn'];
+
+    $user_id = (int) $_GET['user_id'];
+
+    $checkcart = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = $user_id");
+    if(mysqli_num_rows($checkcart)>0){
+        $cartidrow = mysqli_fetch_assoc($checkcart);
+        $cart_id = (int)$cartidrow['id'];
+
+        $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
+        $cartitems = [];
+        while ($rrow = mysqli_fetch_assoc($cartitemcheck)) {
+            $productId = (int) $rrow['product_id'];
+            $checkname = mysqli_query($conn, "SELECT product_title, product_description from products WHERE id = $productId");
+            $r = mysqli_fetch_assoc($checkname);
+            $product_title = $r['product_title'];
+            $product_description = $r['product_description'];
+
+            $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
+                                                INNER JOIN products p on p.category_id = sc.id AND p.id=$productId ");
+            $rw = mysqli_fetch_assoc($checkproductname);
+            $mainCategoryName = $rw['name'];
+
+            $cartitems[] = array(
+                "cartItemId" => (int) $rrow['id'],
+                "productId" => (int) $rrow['product_id'],
+                "productTitle" => $product_title,
+                "productDescription" => $product_description,
+                "mainCategoryName" => $mainCategoryName,
+                "count" => (int) $rrow['count'],
+                "price" => (int) $rrow['price']
+            );
+        }
+
+        $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
+        $cartrow = mysqli_fetch_assoc($cartcheck);
+        
+        //get slot name from slot_id
+        $slot_id = (int) $cartrow['slot_id'];
+        $slotnamecheck = mysqli_query($conn,"SELECT name from slot WHERE id = $slot_id");
+        $abc = mysqli_fetch_assoc($slotnamecheck);
+        $slot_name = $abc['name'];
+        
+        //get usert address from user_address_id
+        $user_address_id = (int) $cartrow['user_address_id'];
+        $addrcheck = mysqli_query($conn,"SELECT address from user_address WHERE id = $user_address_id");
+        $abc = mysqli_fetch_assoc($addrcheck);
+        $address = $abc['address'];
+        
+        $response["data"] = array(
+            "status" => 1,
+            "message" => "cart summary for the user",
+            "user_id" => $user_id,
+            "cartId" => (int) $cartrow['id'],
+            "estimate" => (int) $cartrow['estimate'],
+            "user_address_id" => (int) $cartrow['user_address_id'],
+            "user_address"=>$address,
+            "date" => $cartrow['date'],
+            "slot_id" => (int) $cartrow['slot_id'],
+            "slot_name"=>$slot_name,
+            "cartItems" => $cartitems
+        );
+        echo json_encode($response);
+        die(mysqli_error($conn));
+    }
+    //
+    else{
+        $errorData["error"] = array("status" => 0, "code" => 404, "message" => "No items in the cart for this user.");
+        echo json_encode($errorData);
+        header("HTTP/1.1 404");
+        die(mysqli_error($conn));
+    }
+
+  
 }
