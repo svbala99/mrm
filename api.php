@@ -19,7 +19,7 @@ function checkReqMethod()
     }
 }
 
-$production = true;
+$production = false;
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -4981,6 +4981,42 @@ function customerConfirmAddress()
     $conn = $GLOBALS['conn'];
     
     $input = json_decode(file_get_contents('php://input'), true);
+
+    
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['user_address_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_address_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_address_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_address_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $input['user_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
     
     
     $user_address_id = (int) $input['user_address_id'];
@@ -4990,6 +5026,8 @@ function customerConfirmAddress()
 
     $addresscheck = mysqli_query($conn, "SELECT * from user_address WHERE id =$user_address_id ");
     if (mysqli_num_rows($addresscheck)) {
+        $abc = mysqli_fetch_assoc($addresscheck);
+        $zone_id = (int)$abc['zone_id'];
         $q1 = mysqli_query($conn, "SELECT * from cart WHERE user_id = $user_id");
         if (mysqli_num_rows($q1)) {
             $q2 = mysqli_query($conn, "UPDATE cart SET user_address_id =$user_address_id WHERE user_id= $user_id  ");
@@ -5026,6 +5064,7 @@ function customerConfirmAddress()
                 $response["data"] = array(
                     "status" => 1,
                     "message" => "Address confirmed and added to cart",
+                    "zone_id"=> $zone_id,
                     "user_id" => $user_id,
                     "cartId" => (int) $cartrow['id'],
                     "estimate" => (int) $cartrow['estimate'],
@@ -5049,7 +5088,7 @@ function customerConfirmAddress()
         else {
             $q1 = mysqli_query($conn,"UPDATE user SET user_address_id = $user_address_id WHERE id = $user_id");
             if($q1){
-                $errorData["error"] = array("status" => 1, "message" => "The selected address is stored for this user");
+                $errorData["data"] = array("status" => 1, "message" => "The selected address is stored for this user", "zone_id" => $zone_id);
                 echo json_encode($errorData);
                 die(mysqli_error($conn));                    
             }
@@ -5073,6 +5112,35 @@ function customerConfirmAddress()
 function cartSummary()
 {
     $conn = $GLOBALS['conn'];
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+
+    if (!isset($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    $user_id = (int) $_GET['user_id'];
+
+    validateUserId($conn, $user_id);
 
     $user_id = (int) $_GET['user_id'];
 
@@ -5146,4 +5214,77 @@ function cartSummary()
     }
 
   
+}
+
+function type23Tariff(){
+    $conn = $GLOBALS['conn'];
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+
+    if (!isset($_GET['category_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No category_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['category_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No category_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $main_category_id = (int) $_GET['category_id'];
+    $q = mysqli_query($conn, "SELECT * FROM rate_visits WHERE main_category_id = $main_category_id ORDER BY rate ASC");
+    if(mysqli_num_rows($q)==0){
+        $errorData["data"] = array("status" => 0,   "message" => "No Tariff found for this category");
+        echo json_encode($errorData);
+        die();
+    }
+    while($row = mysqli_fetch_assoc($q)){
+        $minutes_per_visit = (int) $row['minutes_per_visit'];
+        if($minutes_per_visit==0){
+            $hours = (((int) $row['visits']) * $minutes_per_visit) / 60;
+            $tariff[] = array(
+                "tariff_id" => (int) $row['id'],
+                "rate" => (int) $row['rate'],
+                "visits" => (int) $row['visits'],
+                "hours" => ''
+            );
+        }
+        else{
+            $hours = (((int) $row['visits']) * $minutes_per_visit) / 60;
+            $tariff[] = array(
+                "tariff_id" => (int) $row['id'],
+                "rate" => (int) $row['rate'],
+                "visits" => (int) $row['visits'],
+                "hours" => $hours
+            );
+        }
+
+    }
+    $response['data']=array("status"=>1, "message"=>"tariff for main category id: $main_category_id", "tariff"=>$tariff);
+    echo json_encode($response);
+    die();
+}
+
+
+function customerChooseServiceList(){
+    $conn = $GLOBALS['conn'];
+    $q = mysqli_query($conn, "SELECT id, icon, name FROM main_categories WHERE home_category_id = 1");
+    if (mysqli_num_rows($q) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No items found");
+        echo json_encode($errorData);
+        die();
+    }
+    while($row = mysqli_fetch_assoc($q)){
+        $mainCat[] = array(
+            "mainCategoryId"=>(int)$row['id'],
+            "icon" => $row['icon'],
+            "title" =>  $row['name']
+        );
+    }
+    $response['data'] = array("status" => 1, "message" => "Choose a main category id from this list for type 2B", "mainCategories" => $mainCat);
+    echo json_encode($response);
+    die();
 }
