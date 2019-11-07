@@ -552,6 +552,14 @@ function addCustomerAddress()
 
 
     if (mysqli_query($conn, $query)) {
+        $user_address_id = $conn->insert_id;
+        
+        $zz = mysqli_query($conn, "SELECT * FROM user_address WHERE user_id = $userid");
+        if(mysqli_num_rows($zz)==1){
+            $updateaddress = mysqli_query($conn, "UPDATE user SET user_address_id = $user_address_id WHERE id = $userid ");
+        }
+        
+        
         $queryup = "UPDATE user SET is_register_complete= 2 WHERE id='$userid'";
         mysqli_query($conn, $queryup);
 
@@ -5884,3 +5892,1005 @@ function checkSlotAvailable($conn, $slot_id, $zone_id, $date){
             die(mysqli_error($conn));
         }
 }
+
+
+function viewCustomerBooking()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $_GET['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    if (!isset($_GET['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $booking_id = (int) $_GET['booking_id'];
+    validateuserIdBookingId($conn, $user_id, $booking_id);
+
+    $q1 = mysqli_query($conn, "SELECT * FROM booking WHERE user_id = $user_id AND id = $booking_id LIMIT 1");
+    $bookingdetails = mysqli_fetch_assoc($q1);
+    $otp = (int) $bookingdetails['otp'];
+    $emp_id = (int) $bookingdetails['emp_id'];
+    $q2 = mysqli_query($conn, "SELECT e.*, ROUND(AVG(stars),2) AS rating FROM employee e INNER JOIN reviews r ON e.id = r.emp_id WHERE e.id = $emp_id");
+    $employeerow = mysqli_fetch_assoc($q2);
+    $main_category_services = $employeerow['main_category_services'];
+    $main_category_services = substr($main_category_services, 0, 1);
+    $q3 = mysqli_query($conn, "SELECT name FROM main_categories WHERE id = '$main_category_services'");
+    $main_cat_name = mysqli_fetch_assoc($q3);
+    $mc_name = $main_cat_name['name'];
+
+
+    $employeeDetails[] = array("name" => $employeerow['name'], "country_code" => $employeerow['country_code'], "cell" => $employeerow['cell'], "main_category" => $mc_name, "ratings" => $employeerow['rating']);
+
+    $rescheduled_count = (int) $bookingdetails['rescheduled_count'];
+    $booking_status =  $bookingdetails['status'];
+    $servicer_status =  $bookingdetails['servicer_status'];
+    $payment_type =  $bookingdetails['payment_type'];
+    $payment =  $bookingdetails['payment'];
+    $booking_date =  $bookingdetails['date'];
+    $estimate =  (int) $bookingdetails['estimate'];
+    $tax_percent =  (int) $bookingdetails['tax_percent'];
+    $tax_amount =  (int) $bookingdetails['tax_amount'];
+    $total =  (int) $bookingdetails['total'];
+    $coupon =   $bookingdetails['coupon'];
+
+    $q4 = mysqli_query($conn, "SELECT description FROM coupon WHERE code = '$coupon' ");
+    $coupondesc = mysqli_fetch_assoc($q4);
+    $coupon_description =   $coupondesc['description'];
+
+    $coupon_reduce =  (int) $bookingdetails['coupon_reduce'];
+    $wallet_reduce =  (int) $bookingdetails['wallet_reduce'];
+    $amount_payable =  (int) $bookingdetails['amount_payable'];
+
+    $user_address_id =  (int) $bookingdetails['user_address_id'];
+    $q5 = mysqli_query($conn, "SELECT * FROM user_address WHERE id = $user_address_id");
+    $addressDetails = mysqli_fetch_assoc($q5);
+
+    $user_address_details[] = array("location" => $addressDetails['location'], "address" => $addressDetails['address'], "latitude" => $addressDetails['latitude'], "longitude" => $addressDetails['longitude'], "zone_id" => (int) $addressDetails['zone_id']);
+
+    $slot_id =  (int) $bookingdetails['slot_id'];
+    $q6 = mysqli_query($conn, "SELECT name FROM slot WHERE id = $slot_id");
+    $slotname = mysqli_fetch_assoc($q6);
+    $slot = $slotname['name'];
+
+    $updated = $bookingdetails['updated'];
+
+    $q7 = mysqli_query($conn, "SELECT bi.*, product_title, product_description, mc.name FROM booking_item bi INNER JOIN products p ON bi.product_id = p.id INNER JOIN main_categories mc ON p.category_id = mc.id WHERE booking_id = $booking_id");;
+    while ($bookingItem = mysqli_fetch_assoc($q7)) {
+        $bookingItemsArray[] = array(
+            "bookingItemId" => (int) $bookingItem['id'],
+            "productId" => (int) $bookingItem['product_id'],
+            "productTitle" =>  $bookingItem['product_title'],
+            "productDescription" =>  $bookingItem['product_description'],
+            "mainCategoryName" => $bookingItem['name'],
+            "count" => (int) $bookingItem['count'],
+            "price" => (int) $bookingItem['price']
+        );
+    }
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Booking Detail",
+        "user_id" => (int) $user_id,
+        "otp" => (int) $otp,
+        "employee_details" => $employeeDetails,
+        "booking_id" => (int) $booking_id,
+        "rescheduled_count" => (int) $rescheduled_count,
+        "booking_status" => $booking_status,
+        "servicer_status" => $servicer_status,
+        "payment_type" => $payment_type,
+        "payment" => $payment,
+        "booking_date" => (int) $booking_date,
+        "estimate" => (int) $estimate,
+        "tax_percent" => (int) $tax_percent,
+        "tax_amount" => (int) $tax_amount,
+        "total" => (int) $total,
+        "coupon" => $coupon,
+        "coupon_description" => $coupon_description,
+        "coupon_reduce" => (int) $coupon_reduce,
+        "wallet_reduce" => (int) $wallet_reduce,
+        "amount_payable" => (int) $amount_payable,
+        "user_address_details" => $user_address_details,
+        "slot" => $slot,
+        "updated" => $updated,
+        "booking_items" => $bookingItemsArray
+    );
+    echo json_encode($response);
+    die();
+}
+
+
+function viewCustomerBookings()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $_GET['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    $q1 = mysqli_query($conn, "SELECT b.*, s.name FROM booking b INNER JOIN slot s ON b.slot_id = s.id WHERE user_id = $user_id AND home_category_id=1");
+    if (mysqli_num_rows($q1) == 0) {
+        $bookingsArray = array();
+    }
+    while ($bookingrows = mysqli_fetch_assoc($q1)) {
+        $bookingsArray[] = array(
+            "booking_id" => (int) $bookingrows['id'],
+            "estimate" => (int) $bookingrows['estimate'],
+            "date" => $bookingrows['date'],
+            "slot" => $bookingrows['name'],
+            "booking_status" => $bookingrows['status'],
+            "servicer_status" => $bookingrows['servicer_status'],
+            "payment" => $bookingrows['payment'],
+            "payment_type" => $bookingrows['payment_type'],
+            "updated" => $bookingrows['updated']
+        );
+    }
+
+    $q2 = mysqli_query($conn, "SELECT * FROM booking WHERE user_id = $user_id AND home_category_id=2");
+    if (mysqli_num_rows($q2) == 0) {
+        $subscriptionsArray = array();
+    }
+
+    while ($bookingrows = mysqli_fetch_assoc($q2)) {
+        
+        $booking_id = (int) $bookingrows['id'];
+        $qq = mysqli_query($conn, "SELECT mc.division, mc.icon, mc.name, bi23.status, bi23.servicer_status, bi23.payment, bi23.payment_type,
+                                    (SELECT name FROM main_categories mcc WHERE mcc.id = bi23.main_category_id_chosen) AS main_category_chosen_name
+                                    FROM booking_item_23 bi23 INNER JOIN main_categories mc ON bi23.main_category_id = mc.id WHERE bi23.booking_id= $booking_id");
+        $subscripdetails = mysqli_fetch_assoc($qq);
+        
+          $checkavailable = mysqli_query($conn, "SELECT COUNT(id) AS services_available FROM `booking_item_23` WHERE `booking_id` = $booking_id AND payment IS NULL");
+        $aa = mysqli_fetch_assoc($checkavailable);
+        
+        
+        $subscriptionsArray[] = array(
+            "booking_id" => (int) $bookingrows['id'],
+            "booking_status" => $bookingrows['status'],
+            "servicer_status" => $bookingrows['servicer_status'],
+            "payment" => $bookingrows['payment'],
+            "payment_type" => $bookingrows['payment_type'],
+            "expiry" => $bookingrows['expiry'],
+            "division"=>$subscripdetails['division'],
+            "main_category_icon"=>$subscripdetails['icon'],
+            "main_category_name"=> $subscripdetails['name'],
+            "main_category_id_chosen"=>(int) $subscripdetails['main_category_id_chosen'],
+            "main_category_chosen_name"=>$subscripdetails['main_category_chosen_name'],
+            "services_available"=>(int) $aa['services_available']
+        );
+
+
+    }
+
+    $response['data'] = array(
+        "status" => 1, "message" => "Bookings and Subscriptions List for current user",
+        "bookings" => $bookingsArray, "subscriptions" => $subscriptionsArray
+    );
+
+    echo json_encode($response);
+    die();
+}
+
+
+
+function customerCancelBooking()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $input['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+
+    if (!isset($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $booking_id = (int) $input['booking_id'];
+
+    validateuserIdBookingId($conn, $user_id, $booking_id);
+
+
+
+
+    $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking b INNER JOIN slot s ON b.slot_id  = s.id WHERE user_id = $user_id AND b.id = $booking_id LIMIT 1");
+    $bookingdetails = mysqli_fetch_assoc($q1);
+
+    $status = $bookingdetails['status'];
+    if ($status == 'CANCELLED') {
+        $errorData["data"] = array("status" => 0,   "message" => "This booking already cancelled");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $home_category_id = (int) $bookingdetails['home_category_id'];
+    if ($home_category_id == 2) {
+        $errorData["data"] = array("status" => 0,   "message" => "This booking is not from TYPE 1. Cannot reschedule this booking");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $date = $bookingdetails['date'];
+    date_default_timezone_set('Asia/Calcutta');
+    $today = date('Y-m-d');
+    if (strtotime($date) < strtotime($today)) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked date is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    }
+
+
+    $start = $bookingdetails['start'];
+    date_default_timezone_set('Asia/Calcutta');
+    $updated = date('Y-m-d');
+
+    $timenow =  date('Y-m-d h:i:s');
+    $booked_time = $date." ". $start;
+    $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
+    if ($minutesLeft < 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    } else if ($minutesLeft < 120) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is less than 2 hours. Cannot cancel this booking now");
+        echo json_encode($errorData);
+        die();
+    } else if ($minutesLeft >= 120) {
+        $cancel = mysqli_query($conn, "UPDATE booking SET status = 'CANCELLED', servicer_status='Cancelled', payment = 'CANCELLED', payment_type=NULL, updated = '$updated' WHERE user_id = $user_id AND id = $booking_id  ");
+        if ($cancel) {
+            $errorData["data"] = array("status" => 1,   "message" => "This booking ID is cancelled by user successfully");
+            echo json_encode($errorData);
+            die();
+        } else {
+            $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+}
+
+function customerRescheduleBooking()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $input['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+
+    if (!isset($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $booking_id = (int) $input['booking_id'];
+
+    validateuserIdBookingId($conn, $user_id, $booking_id);
+
+
+    if (!isset($input['slot_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['slot_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $slot_id = (int) $input['slot_id'];
+    validateSlotId($conn, $slot_id);
+
+    if (!isset($input['date'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['date'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $dateNew = $input['date'];
+    date_default_timezone_set('Asia/Calcutta');
+    $today = date('Y-m-d');
+    if (strtotime($dateNew) < strtotime($today)) {
+        $errorData["data"] = array("status" => 0,   "message" => "Given date is in past.");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $timenow =  date('h:i:s');
+    $tt = mysqli_query($conn, "SELECT start FROM slot WHERE id = $slot_id");
+    $ch = mysqli_fetch_assoc($tt);
+    $startNew = $ch['start'];
+    $minutesLeftNew = strtotime($startNew) - strtotime($timenow);
+    if ($minutesLeftNew < 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Given date is today but time is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking b INNER JOIN slot s ON b.slot_id  = s.id WHERE user_id = $user_id AND b.id = $booking_id LIMIT 1");
+    $bookingdetails = mysqli_fetch_assoc($q1);
+
+    $rescheduled_count = (int) $bookingdetails['rescheduled_count'];
+    if ($rescheduled_count >= 2) {
+        $errorData["data"] = array("status" => 0,   "message" => "Reschedule limit exceeded; cannot reschedule now");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $status = $bookingdetails['status'];
+    if ($status == 'CANCELLED') {
+        $errorData["data"] = array("status" => 0,   "message" => "This booking already cancelled");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $home_category_id = (int) $bookingdetails['home_category_id'];
+    if ($home_category_id == 2) {
+        $errorData["data"] = array("status" => 0,   "message" => "This booking is not from TYPE 1. Cannot reschedule this booking");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $date = $bookingdetails['date'];
+    date_default_timezone_set('Asia/Calcutta');
+    $today = date('Y-m-d');
+    if (strtotime($date) < strtotime($today)) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked date is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    }
+
+
+    $start = $bookingdetails['start'];
+    date_default_timezone_set('Asia/Calcutta');
+    $updated = date('Y-m-d');
+
+    $timenow =  date('Y-m-d h:i:s');
+    $booked_time = $date." ". $start;
+    $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
+    if ($minutesLeft < 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    } else if ($minutesLeft < 120) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is less than 2 hours. Cannot cancel this booking now");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $user_address_id = (int) $bookingdetails['user_address_id'];
+    $xyz = mysqli_query($conn, "SELECT zone_id FROM user_address WHERE id = $user_address_id");
+    $bbc = mysqli_fetch_assoc($xyz);
+    $zone_id = (int) $bbc['zone_id'];
+    checkSlotAvailable($conn, $slot_id, $zone_id, $dateNew);
+
+
+    if ($minutesLeft >= 120) {
+        $reschedule = mysqli_query($conn, "UPDATE booking SET rescheduled_count = $rescheduled_count+1, status = 'RESCHEDULED', emp_id = NULL, date = '$dateNew', slot_id = $slot_id, updated = '$updated' WHERE user_id = $user_id AND id = $booking_id  ");
+        if ($reschedule) {
+            $errorData["data"] = array("status" => 1,   "message" => "This booking ID is rescheduled by user successfully");
+            echo json_encode($errorData);
+            die();
+        } else {
+            $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+}
+
+
+function validateSlotId($conn, $slot_id)
+{
+    $check = mysqli_query($conn, "SELECT * FROM slot WHERE id = $slot_id");
+    if (mysqli_num_rows($check) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Invalid slot_id is passed");
+        echo json_encode($errorData);
+        die();
+    } else {
+        return true;
+    }
+}
+
+function customerViewSubscription()
+{
+
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $_GET['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    if (!isset($_GET['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $booking_id = (int) $_GET['booking_id'];
+    validateuserIdBookingId($conn, $user_id, $booking_id);
+
+    $q1 = mysqli_query($conn, "SELECT
+                                    bb.created,
+                                    bb.expiry,
+                                    bb.home_category_id,
+                                    (SELECT COUNT(id) FROM booking_item_23 bii WHERE bii.booking_id = bi.`booking_id` AND bii.status IS NULL) AS services_available,
+                                    ROUND((((SELECT COUNT(id) FROM booking_item_23 bii WHERE bii.booking_id = bi.`booking_id` AND bii.status IS NULL LIMIT 1)*rv.minutes_per_visit)/60),1) AS hours_left,
+                                    bi.*,
+                                    mc.division,
+                                    mc.name,
+                                    mc.icon,
+                                    mc.home_category_id,
+                                    (SELECT name FROM main_categories mcc WHERE mcc.id = bi.`main_category_id_chosen`) AS main_category_chosen_name
+                                    FROM `booking_item_23` bi
+                                    INNER JOIN main_categories mc
+                                    ON mc.id = bi.`main_category_id` 
+                                    INNER JOIN rate_visits rv
+                                    ON rv.main_category_id = bi.`main_category_id`
+                                    INNER JOIN booking bb 
+                                    ON bb.id = bi.`booking_id`
+                                    WHERE bi.`booking_id`= $booking_id
+                                    GROUP BY bi.`id`");
+
+
+    while ($row = mysqli_fetch_assoc($q1)) {
+        $services_list[] = array(
+            "visit_id" => (int) $row['id'],
+            "icon" => $row['icon'],
+            "name" => "Service Term " . (int) $row['visit_number'],
+            "status" =>  $row['status']==NULL?'Available': $row['status'],
+            "booked_on" =>  $row['date'] == NULL ? '' : $row['date']
+        );
+    }
+
+    $q2 = mysqli_query($conn, "SELECT
+                                    bb.created,
+                                    bb.expiry,
+                                    bb.home_category_id,
+                                    (SELECT COUNT(id) FROM booking_item_23 bii WHERE bii.booking_id = bi.`booking_id` AND bii.status IS NULL) AS services_available,
+                                    ROUND((((SELECT COUNT(id) FROM booking_item_23 bii WHERE bii.booking_id = bi.`booking_id` AND bii.status IS NULL LIMIT 1)*rv.minutes_per_visit)/60),1) AS hours_left,
+                                    bi.*,
+                                    mc.division,
+                                    mc.name,
+                                    mc.icon,
+                                    mc.home_category_id,
+                                    (SELECT name FROM main_categories mcc WHERE mcc.id = bi.`main_category_id_chosen`) AS main_category_chosen_name
+                                    FROM `booking_item_23` bi
+                                    INNER JOIN main_categories mc
+                                    ON mc.id = bi.`main_category_id` 
+                                    INNER JOIN rate_visits rv
+                                    ON rv.main_category_id = bi.`main_category_id`
+                                    INNER JOIN booking bb 
+                                    ON bb.id = bi.`booking_id`
+                                    WHERE bi.`booking_id`= 291019003
+                                    GROUP BY bi.`id`
+                                    LIMIT 1");
+    $row2 = mysqli_fetch_assoc($q2);
+    $q3 = mysqli_query($conn,"SELECT created FROM booking WHERE id = $booking_id");
+    $tx = mysqli_fetch_assoc($q3);
+    $subs = $tx['created'];
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Services List for current user's subscription",
+        "booking_id" => $booking_id,
+        "home_category_id" => (int) $row2['home_category_id'],
+        "division" => $row2['division'],
+        "main_category_name" => $row2['name'],
+        "main_category_icon" => $row2['icon'],
+        "main_category_chosen_name" => $row2['main_category_chosen_name'] == NULL ? '' : $row2['main_category_chosen_name'],
+        "services_available" => (int) $row2['services_available'],
+        "hours_left" => (int) $row2['hours_left'],
+        "subscribed_on" => $subs,
+        "expiry" => $row2['expiry'],
+        "services_list" => $services_list
+    );
+    echo json_encode($response);
+    die();
+}
+
+function customerViewSingleTerm(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $_GET['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    if (!isset($_GET['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $visit_id = (int) $_GET['visit_id'];
+    validateuserIdVisitId($conn, $user_id, $visit_id);
+
+    $q1 = mysqli_query($conn,"SELECT mc.name,
+                (SELECT name FROM main_categories mcc WHERE mcc.id = bi.main_category_id_chosen)AS main_category_chosen_name,
+                bi.* FROM booking_item_23 bi INNER JOIN main_categories mc ON mc.id = bi.`main_category_id` WHERE bi.id = $visit_id");
+    $row = mysqli_fetch_assoc($q1);
+
+    $otp = (int) $row['otp'];
+    $main_category_id = (int) $row['main_category_id'];
+    $main_category_name = $row['name'];
+    $main_category_id_chosen = $row['main_category_id_chosen'];
+    $main_category_chosen_name = $row['main_category_chosen_name'];
+    $device_serial_number = $row['device_serial_number'];
+    $booking_id = (int) $row['booking_id'];
+    $rescheduled_count = (int) $row['reschedule_count'];
+    $booking_status = $row['status'];
+    $servicer_status = $row['servicer_status'];
+    $booking_date = $row['date'];
+
+    $emp_id = (int) $row['emp_id'];
+    $empquery = mysqli_query($conn, "SELECT ROUND(AVG(stars),2) AS ratings,e.* FROM employee e INNER JOIN reviews r ON r.emp_id = e.id WHERE e.id = $emp_id LIMIT 1");
+    $row2 = mysqli_fetch_assoc($empquery);
+    $main_category_services = $row2['main_category_services'];
+    $main_category_services = substr($main_category_services, 0, 1);
+    $q3 = mysqli_query($conn, "SELECT name FROM main_categories WHERE id = '$main_category_services'");
+    $main_cat_name = mysqli_fetch_assoc($q3);
+    $mc_name = $main_cat_name['name'];
+    $employeeDetails = array("name" => $row2['name'], "country_code" => $row2['country_code'], "cell" => $row2['cell'], "main_category" => $mc_name, "ratings" => $row2['ratings']);
+
+    $user_address_id = (int) $row['user_address_id'];
+    $q5 = mysqli_query($conn, "SELECT * FROM user_address WHERE id = $user_address_id");
+    $addressDetails = mysqli_fetch_assoc($q5);
+    $user_address_details = array("location" => $addressDetails['location'], "address" => $addressDetails['address'], "latitude" => $addressDetails['latitude'], "longitude" => $addressDetails['longitude'], "zone_id" => (int) $addressDetails['zone_id']);
+
+
+    $slot_id = (int) $row['slot_id'];
+    $q6 = mysqli_query($conn, "SELECT name FROM slot WHERE id = $slot_id");
+    $slotname = mysqli_fetch_assoc($q6);
+    $slot = $slotname['name'];
+
+    $updated = $row['updated'];
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Subscription Term Details",
+        "visit_id"=>$visit_id,
+        "user_id" => $user_id,
+        "otp" => $otp,
+        "employee_details" => $employeeDetails==NULL?array(): $employeeDetails,
+        "main_category_id"=>$main_category_id,
+        "main_category_name"=>$main_category_name,
+        "main_category_id_chosen"=>$main_category_id_chosen==NULL?0: (int)$main_category_id_chosen,
+        "main_category_chosen_name"=>$main_category_chosen_name==NULL?'': $main_category_chosen_name,
+        "device_serial_number"=>$device_serial_number==NULL?'': $device_serial_number,
+        "booking_id"=>$booking_id,
+        "rescheduled_count" => (int) $rescheduled_count,
+        "booking_status" => $booking_status,
+        "servicer_status" => $servicer_status,
+        "booking_date" => $booking_date,
+        "user_address_details" => $user_address_details,
+        "slot" => $slot
+    );
+    echo json_encode($response);
+    die(); 
+}
+
+function validateuserIdVisitId($conn, $user_id, $visit_id)
+{
+    $check = mysqli_query($conn, "SELECT b.user_id FROM booking b INNER JOIN booking_item_23 bi ON bi.booking_id = b.id WHERE b.user_id = $user_id AND bi.id=$visit_id");
+    if (mysqli_num_rows($check) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "user_id and visit_id mismatch");
+        echo json_encode($errorData);
+        die();
+    } else {
+        return true;
+    }
+}
+
+
+function customerRescheduleTerm(){
+     $conn = $GLOBALS['conn'];
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $input['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+    if (!isset($input['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $visit_id = (int) $input['visit_id'];
+    validateuserIdVisitId($conn, $user_id, $visit_id);
+
+    
+    if (!isset($input['slot_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['slot_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $slot_id = (int) $input['slot_id'];
+    validateSlotId($conn, $slot_id);
+
+
+    if (!isset($input['date'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['date'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $dateNew = $input['date'];
+    date_default_timezone_set('Asia/Calcutta');
+    $today = date('Y-m-d');
+    if (strtotime($dateNew) < strtotime($today)) {
+        $errorData["data"] = array("status" => 0,   "message" => "Given date is in past.");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $timenow =  date('h:i:s');
+    $tt = mysqli_query($conn, "SELECT start FROM slot WHERE id = $slot_id");
+    $ch = mysqli_fetch_assoc($tt);
+    $startNew = $ch['start'];
+    $minutesLeftNew = strtotime($startNew) - strtotime($timenow);
+    if ($minutesLeftNew < 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Given date is today but time is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking_item_23 b INNER JOIN slot s ON b.slot_id  = s.id WHERE b.id = $visit_id LIMIT 1");
+    $bookingdetails = mysqli_fetch_assoc($q1);
+
+    $rescheduled_count = (int) $bookingdetails['reschedule_count'];
+    if ($rescheduled_count >= 2) {
+        $errorData["data"] = array("status" => 0,   "message" => "Reschedule limit exceeded; cannot reschedule now");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $status = $bookingdetails['status'];
+    if ($status == 'CANCELLED') {
+        $errorData["data"] = array("status" => 0,   "message" => "This booking already cancelled");
+        echo json_encode($errorData);
+        die();
+    }
+///////////////////////////////////
+    $date = $bookingdetails['date'];
+    date_default_timezone_set('Asia/Calcutta');
+    $today = date('Y-m-d');
+    if (strtotime($date) < strtotime($today)) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked date is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $start = $bookingdetails['start'];
+    date_default_timezone_set('Asia/Calcutta');
+    $updated = date('Y-m-d');
+
+    $timenow =  date('Y-m-d h:i:s');
+    $booked_time = $date." ". $start;
+    $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
+    
+    if ($minutesLeft < 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    } else if ($minutesLeft < 120) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is less than 2 hours. Cannot reschedule this booking now");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $user_address_id = (int) $bookingdetails['user_address_id'];
+    $xyz = mysqli_query($conn, "SELECT zone_id FROM user_address WHERE id = $user_address_id");
+    $bbc = mysqli_fetch_assoc($xyz);
+    $zone_id = (int) $bbc['zone_id'];
+    checkSlotAvailable($conn, $slot_id, $zone_id, $dateNew);
+
+    if ($minutesLeft >= 120) {
+        $reschedule = mysqli_query($conn, "UPDATE booking_item_23 SET reschedule_count = $rescheduled_count+1, status = 'RESCHEDULED', emp_id = NULL, date = '$dateNew', slot_id = $slot_id, updated = '$updated' WHERE id = $visit_id  ");
+        if ($reschedule) {
+            $errorData["data"] = array("status" => 1,   "message" => "Service term rescheduled successfully");
+            echo json_encode($errorData);
+            die();
+        } else {
+            $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+}
+
+function CustomerCancelTerm(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $user_id = (int) $input['user_id'];
+    validateUserId($conn, $user_id);
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+
+
+    if (!isset($input['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $visit_id = (int) $input['visit_id'];
+    validateuserIdVisitId($conn, $user_id, $visit_id);
+
+
+    //////////////////////////////////////////////////////////////////////////////////
+     $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking_item_23 b INNER JOIN slot s ON b.slot_id  = s.id WHERE b.id = $visit_id LIMIT 1");
+    $bookingdetails = mysqli_fetch_assoc($q1);
+
+    $status = $bookingdetails['status'];
+    if ($status == 'CANCELLED') {
+        $errorData["data"] = array("status" => 0,   "message" => "This booking already cancelled");
+        echo json_encode($errorData);
+        die();
+    }
+///////////////////////////////////
+    $date = $bookingdetails['date'];
+    date_default_timezone_set('Asia/Calcutta');
+    $today = date('Y-m-d');
+    if (strtotime($date) < strtotime($today)) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked date is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $start = $bookingdetails['start'];
+    date_default_timezone_set('Asia/Calcutta');
+    $updated = date('Y-m-d');
+
+    $timenow =  date('Y-m-d h:i:s');
+
+    $booked_time = $date." ". $start;
+    $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
+    if ($minutesLeft < 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
+        echo json_encode($errorData);
+        die();
+    } else if ($minutesLeft < 120) {
+        $errorData["data"] = array("status" => 0,   "message" => "Booked time is less than 2 hours. Cannot cancel this booking now");
+        echo json_encode($errorData);
+        die();
+    }
+
+    if ($minutesLeft >= 120) {
+        $cancel = mysqli_query($conn, "UPDATE booking_item_23 SET status = 'CANCELLED', servicer_status='Cancelled', payment = 'CANCELLED', payment_type=NULL, updated = '$updated' WHERE id = $visit_id  ");
+        if ($cancel) {
+            $errorData["data"] = array("status" => 1,   "message" => "visit_id is cancelled by user successfully");
+            echo json_encode($errorData);
+            die();
+        } else {
+            $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+}
+
+?>
