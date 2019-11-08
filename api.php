@@ -19,13 +19,13 @@ function checkReqMethod()
     }
 }
 
-$production = true;
+$production = false;
 $servername = "localhost";
 $username = "root";
 $password = "";
 $database = "mrm";
 
-if($production){
+if ($production) {
     $servername = "localhost";
     $username = "xplor4br_mrm";
     $password = "K{NC8io_~lV8";
@@ -553,13 +553,13 @@ function addCustomerAddress()
 
     if (mysqli_query($conn, $query)) {
         $user_address_id = $conn->insert_id;
-        
+
         $zz = mysqli_query($conn, "SELECT * FROM user_address WHERE user_id = $userid");
-        if(mysqli_num_rows($zz)==1){
+        if (mysqli_num_rows($zz) == 1) {
             $updateaddress = mysqli_query($conn, "UPDATE user SET user_address_id = $user_address_id WHERE id = $userid ");
         }
-        
-        
+
+
         $queryup = "UPDATE user SET is_register_complete= 2 WHERE id='$userid'";
         mysqli_query($conn, $queryup);
 
@@ -3738,7 +3738,7 @@ function addToCartCount()
             die();
         }
         $tariff_id = (int) $input['tariff_id'];
-        
+
 
 
         $test = mysqli_query($conn, "SELECT mc.home_category_id, mc.division FROM main_categories mc
@@ -4123,8 +4123,8 @@ function deleteFromCartCount()
                             "slot_id" => (int) $cartrow['slot_id'],
                             "cartItems" => $cartitems
                         );
-                          echo json_encode($response);
-                          die(mysqli_error($conn));
+                        echo json_encode($response);
+                        die(mysqli_error($conn));
                     }
                 }
             }
@@ -4279,7 +4279,7 @@ function deleteCustomerAddress()
     validateUserIdAddressId($conn, $user_id, $address_id);
 
     $check = mysqli_query($conn, "DELETE FROM user_address WHERE id = $address_id AND user_id = $user_id");
-    
+
     $abc = mysqli_fetch_assoc($checkk);
     $user_address_id = (int) $abc['user_address_id'];
     $checkaddress = mysqli_query($conn, "SELECT * FROM user_address WHERE user_id = $user_id");
@@ -4307,23 +4307,20 @@ function deleteCustomerAddress()
                 );
             }
         }
-                if ($check) {
-                        $data = array("data" => array("status" => 1, "message" => "address_id deleted successfully", "address" => $address));
-                        echo json_encode($data);
-                        die(mysqli_error($conn));
-                } else {
-                    $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
-                    echo json_encode($errorData);
-                    die();
-                }
-    }
-    else {
+        if ($check) {
+            $data = array("data" => array("status" => 1, "message" => "address_id deleted successfully", "address" => $address));
+            echo json_encode($data);
+            die(mysqli_error($conn));
+        } else {
+            $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+            echo json_encode($errorData);
+            die();
+        }
+    } else {
         $errorData["data"] = array("status" => 2,   "message" => "address_id deleted successfully", "address" => array());
         echo json_encode($errorData);
         die();
     }
-    
-
 }
 function validateUserIdAddressId($conn, $user_id, $address_id)
 {
@@ -4768,245 +4765,242 @@ function clearCart()
     }
     //END oF BLOCKED
     validateUserId($conn, $user_id);
-    
-    if(isset($input['type'])){
+
+    if (isset($input['type'])) {
         $type = $input['type'];
-            if (empty($input['type'])) {
-                $errorData["data"] = array("status" => 0,   "message" => "No type is supplied");
+        if (empty($input['type'])) {
+            $errorData["data"] = array("status" => 0,   "message" => "No type is supplied");
+            echo json_encode($errorData);
+            die();
+        }
+        if ($type == '1') {
+            ////////////////////////////////////clear cart and add type 1////////////////////////////
+            ////////////////////clear cart/////////////////////////////
+            $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
+            ///////////////////add type 1///////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////HOME TYPE 1//////////////////////////////////////////////////////////////
+            if (!isset($input['product_id'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
                 echo json_encode($errorData);
                 die();
             }
-        if($type=='1'){
-            ////////////////////////////////////clear cart and add type 1////////////////////////////
-                        ////////////////////clear cart/////////////////////////////
-                        $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
-                        ///////////////////add type 1///////////////////////////////////////////
-                                             ////////////////////////////////////////////////////////////////HOME TYPE 1//////////////////////////////////////////////////////////////
-                            if (!isset($input['product_id'])) {
-                                $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
-                                echo json_encode($errorData);
-                                die();
-                            }
-                            if (empty($input['product_id'])) {
-                                $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
-                                echo json_encode($errorData);
-                    
-                                die();
-                            }
-                            $product_id = (int) $input['product_id'];
-                    
-                            $checkname = mysqli_query($conn, "SELECT product_title,price, product_description from products WHERE id = $product_id");
-                            $rrr = mysqli_fetch_assoc($checkname);
-                            $product_price = (int) $rrr['price'];
-                            $product_title = $rrr['product_title'];
-                            $product_description = $rrr['product_description'];
-                    
-                            $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
+            if (empty($input['product_id'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No product_id is supplied");
+                echo json_encode($errorData);
+
+                die();
+            }
+            $product_id = (int) $input['product_id'];
+
+            $checkname = mysqli_query($conn, "SELECT product_title,price, product_description from products WHERE id = $product_id");
+            $rrr = mysqli_fetch_assoc($checkname);
+            $product_price = (int) $rrr['price'];
+            $product_title = $rrr['product_title'];
+            $product_description = $rrr['product_description'];
+
+            $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
                                                         INNER JOIN products p on p.category_id = sc.id AND p.id=$product_id ");
-                            $rw = mysqli_fetch_assoc($checkproductname);
-                            $mainCategoryName = $rw['name'];
-                    
-                                $updated = date('Y-m-d');
-                    
-                                $priceCheck = mysqli_query($conn, "SELECT price from products WHERE id = $product_id");
-                                $rw = mysqli_fetch_assoc($priceCheck);
-                                $price = (int) $rw['price'];
-                    
-                                $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
+            $rw = mysqli_fetch_assoc($checkproductname);
+            $mainCategoryName = $rw['name'];
+
+            $updated = date('Y-m-d');
+
+            $priceCheck = mysqli_query($conn, "SELECT price from products WHERE id = $product_id");
+            $rw = mysqli_fetch_assoc($priceCheck);
+            $price = (int) $rw['price'];
+
+            $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
                                             VALUES ($type, $user_id, $price )");
-                                $cart_id = (int) $conn->insert_id;
-                    
-                                $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, product_id, count,price) 
+            $cart_id = (int) $conn->insert_id;
+
+            $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, product_id, count,price) 
                                             VALUES ( $cart_id, $product_id, 1, $price)");
-                                $cart_item_id =  (int) $conn->insert_id;
-                                if ($res and $res1) {
-                                    $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
-                                    while ($rw = mysqli_fetch_assoc($cartitemcheck)) {
-                                        $cartitems[] = array(
-                                            "cartItemId" => (int) $rw['id'],
-                                            "productId" => (int) $rw['product_id'],
-                                            "productTitle" => $product_title,
-                                            "productDescription" => $product_description,
-                                            "mainCategoryName" => $mainCategoryName,
-                                            "count" => (int) $rw['count'],
-                                            "price" => (int) $rw['price']
-                                        );
-                                    }
-                    
-                                    $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
-                                    while ($rw = mysqli_fetch_assoc($cartcheck)) {
-                                        $response["data"] = array(
-                                            "status" => 1,
-                                            "message" => "Item added to cart successfully",
-                                            "type" => $type,
-                                            "user_id" => $user_id,
-                                            "cartId" => (int) $rw['id'],
-                                            "estimate" => (int) $rw['estimate'],
-                                            "user_address_id" => (int) $rw['user_address_id'],
-                                            "date" => $rw['date'],
-                                            "slot_id" => (int) $rw['slot_id'],
-                                            "cartItems" => $cartitems
-                                        );
-                                        echo json_encode($response);
-                                        die(mysqli_error($conn));
-                                    }
-                                }
-                                //
-                                else {
-                                    $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in serverr");
-                                    echo json_encode($errorData);
-                    
-                                    die(mysqli_error($conn));
-                                }
-                        //////////////////end of add type 1
-        }
-                else if ($type == '2') {
-                ////////////////////////////////////////////////////////////////HOME TYPE 2//////////////////////////////////////////////////////////////
-                             ////////////////////clear cart/////////////////////////////
-                $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
-                
-                if (!isset($input['tariff_id'])) {
-                    $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
-                    echo json_encode($errorData);
-                    die();
+            $cart_item_id =  (int) $conn->insert_id;
+            if ($res and $res1) {
+                $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
+                while ($rw = mysqli_fetch_assoc($cartitemcheck)) {
+                    $cartitems[] = array(
+                        "cartItemId" => (int) $rw['id'],
+                        "productId" => (int) $rw['product_id'],
+                        "productTitle" => $product_title,
+                        "productDescription" => $product_description,
+                        "mainCategoryName" => $mainCategoryName,
+                        "count" => (int) $rw['count'],
+                        "price" => (int) $rw['price']
+                    );
                 }
-                $tariff_id = (int) $input['tariff_id'];
-        
-                $test = mysqli_query($conn, "SELECT mc.home_category_id FROM main_categories mc
+
+                $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
+                while ($rw = mysqli_fetch_assoc($cartcheck)) {
+                    $response["data"] = array(
+                        "status" => 1,
+                        "message" => "Item added to cart successfully",
+                        "type" => $type,
+                        "user_id" => $user_id,
+                        "cartId" => (int) $rw['id'],
+                        "estimate" => (int) $rw['estimate'],
+                        "user_address_id" => (int) $rw['user_address_id'],
+                        "date" => $rw['date'],
+                        "slot_id" => (int) $rw['slot_id'],
+                        "cartItems" => $cartitems
+                    );
+                    echo json_encode($response);
+                    die(mysqli_error($conn));
+                }
+            }
+            //
+            else {
+                $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in serverr");
+                echo json_encode($errorData);
+
+                die(mysqli_error($conn));
+            }
+            //////////////////end of add type 1
+        } else if ($type == '2') {
+            ////////////////////////////////////////////////////////////////HOME TYPE 2//////////////////////////////////////////////////////////////
+            ////////////////////clear cart/////////////////////////////
+            $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
+
+            if (!isset($input['tariff_id'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+            $tariff_id = (int) $input['tariff_id'];
+
+            $test = mysqli_query($conn, "SELECT mc.home_category_id FROM main_categories mc
                                                                 INNER JOIN rate_visits rv ON rv.main_category_id=mc.id
                                                                 WHERE rv.id = $tariff_id");
-                $row = mysqli_fetch_assoc($test);
-                $home_category_id = (int) $row['home_category_id'];
-                if ($home_category_id != $type) {
-                    $errorData["data"] = array("status" => 0,   "message" => "This tariff_id is not from type 2");
-                    echo json_encode($errorData);
-                    die();
-                }
-        
-                if (!isset($input['quantity'])) {
-                    $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
-                    echo json_encode($errorData);
-                    die();
-                }
-                $quantity = (int) $input['quantity'];
-                if ($quantity < 1) {
-                    $errorData["data"] = array("status" => 0,   "message" => "quantity is less than 1");
-                    echo json_encode($errorData);
-                    die();
-                }
-                    /////////////////////////////////////////////cart is free for this user///////////////////////////////////////////////////////
-                    $priceCheck = mysqli_query($conn, "SELECT rate,visits,main_category_id from rate_visits WHERE id = $tariff_id");
-                    if (mysqli_num_rows($priceCheck) == 0) {
-                        $errorData["data"] = array("status" => 0,   "message" => "No tariff available for this details");
-                        echo json_encode($errorData);
-                        die();
-                    }
-                    $rw = mysqli_fetch_assoc($priceCheck);
-                    $visits = (int) $rw['visits'];
-                    $main_category_id = (int) $rw['main_category_id'];
-        
-        
-                    $ratePerQuantity = (int) $rw['rate'];
-                    $estimate = $ratePerQuantity * $quantity;
-        
-                    $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
+            $row = mysqli_fetch_assoc($test);
+            $home_category_id = (int) $row['home_category_id'];
+            if ($home_category_id != $type) {
+                $errorData["data"] = array("status" => 0,   "message" => "This tariff_id is not from type 2");
+                echo json_encode($errorData);
+                die();
+            }
+
+            if (!isset($input['quantity'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+            $quantity = (int) $input['quantity'];
+            if ($quantity < 1) {
+                $errorData["data"] = array("status" => 0,   "message" => "quantity is less than 1");
+                echo json_encode($errorData);
+                die();
+            }
+            /////////////////////////////////////////////cart is free for this user///////////////////////////////////////////////////////
+            $priceCheck = mysqli_query($conn, "SELECT rate,visits,main_category_id from rate_visits WHERE id = $tariff_id");
+            if (mysqli_num_rows($priceCheck) == 0) {
+                $errorData["data"] = array("status" => 0,   "message" => "No tariff available for this details");
+                echo json_encode($errorData);
+                die();
+            }
+            $rw = mysqli_fetch_assoc($priceCheck);
+            $visits = (int) $rw['visits'];
+            $main_category_id = (int) $rw['main_category_id'];
+
+
+            $ratePerQuantity = (int) $rw['rate'];
+            $estimate = $ratePerQuantity * $quantity;
+
+            $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
                                             VALUES ($type, $user_id, $estimate )");
-                    $cart_id = (int) $conn->insert_id;
-        
-                    $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, main_category_id, count, price,visits) 
+            $cart_id = (int) $conn->insert_id;
+
+            $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, main_category_id, count, price,visits) 
                                             VALUES ( $cart_id, $main_category_id, $quantity, $estimate, $visits)");
-                    $cart_item_id =  (int) $conn->insert_id;
-                    if ($res and $res1) {
-                        $response["data"] = array(
-                            "status" => 1,
-                            "message" => "Type 2A Item added to cart successfully",
-                            "type" => $type
-                        );
-                        echo json_encode($response);
-                        die(mysqli_error($conn));
-                    }
-                    //
-                    else {
-                        $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in server");
-                        echo json_encode($errorData);
-        
-                        die(mysqli_error($conn));
-                    }
-            } 
-            
-                                else if ($type == '2B') {
-                            ////////////////////////////////////////////////////////////////HOME TYPE 2B//////////////////////////////////////////////////////////////
-                                                 ////////////////////clear cart/////////////////////////////
-                                        $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
-                
-                            if (!isset($input['tariff_id'])) {
-                                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
-                                echo json_encode($errorData);
-                                die();
-                            }
-                            if (empty($input['tariff_id'])) {
-                                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
-                                echo json_encode($errorData);
-                                die();
-                            }
-                            $tariff_id = (int) $input['tariff_id'];
-                            
-                            if (!isset($input['quantity'])) {
-                                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
-                                echo json_encode($errorData);
-                                die();
-                            }
-                            if (empty($input['quantity'])) {
-                                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
-                                echo json_encode($errorData);
-                                die();
-                            }
-                            $quantity = (int) $input['quantity'];
-                    
-                                //cart is free for this user///////////////////////////////////////////////////////
-                                $priceCheck = mysqli_query($conn, "SELECT rate,visits,main_category_id from rate_visits WHERE id = $tariff_id");
-                                if (mysqli_num_rows($priceCheck) == 0) {
-                                    $errorData["data"] = array("status" => 0,   "message" => "No tariff available for this details");
-                                    echo json_encode($errorData);
-                                    die();
-                                }
-                                $rw = mysqli_fetch_assoc($priceCheck);
-                                $visits = (int) $rw['visits'];
-                                $main_category_id = (int) $rw['main_category_id'];
-                    
-                    
-                                $ratePerQuantity = (int) $rw['rate'];
-                                // echo $ratePerQuantity."    ".$quantity;
-                                $estimate = $ratePerQuantity * $quantity;
-                    
-                    
-                    
-                                $home_category_id = substr($type, 0, 1);
-                    
-                                $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
+            $cart_item_id =  (int) $conn->insert_id;
+            if ($res and $res1) {
+                $response["data"] = array(
+                    "status" => 1,
+                    "message" => "Type 2A Item added to cart successfully",
+                    "type" => $type
+                );
+                echo json_encode($response);
+                die(mysqli_error($conn));
+            }
+            //
+            else {
+                $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in server");
+                echo json_encode($errorData);
+
+                die(mysqli_error($conn));
+            }
+        } else if ($type == '2B') {
+            ////////////////////////////////////////////////////////////////HOME TYPE 2B//////////////////////////////////////////////////////////////
+            ////////////////////clear cart/////////////////////////////
+            $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
+
+            if (!isset($input['tariff_id'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+            if (empty($input['tariff_id'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+            $tariff_id = (int) $input['tariff_id'];
+
+            if (!isset($input['quantity'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+            if (empty($input['quantity'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "No quantity is supplied");
+                echo json_encode($errorData);
+                die();
+            }
+            $quantity = (int) $input['quantity'];
+
+            //cart is free for this user///////////////////////////////////////////////////////
+            $priceCheck = mysqli_query($conn, "SELECT rate,visits,main_category_id from rate_visits WHERE id = $tariff_id");
+            if (mysqli_num_rows($priceCheck) == 0) {
+                $errorData["data"] = array("status" => 0,   "message" => "No tariff available for this details");
+                echo json_encode($errorData);
+                die();
+            }
+            $rw = mysqli_fetch_assoc($priceCheck);
+            $visits = (int) $rw['visits'];
+            $main_category_id = (int) $rw['main_category_id'];
+
+
+            $ratePerQuantity = (int) $rw['rate'];
+            // echo $ratePerQuantity."    ".$quantity;
+            $estimate = $ratePerQuantity * $quantity;
+
+
+
+            $home_category_id = substr($type, 0, 1);
+
+            $res1 = mysqli_query($conn, "INSERT INTO cart(home_category_id, user_id, estimate) 
                                                         VALUES ($home_category_id, $user_id, $estimate )");
-                                $cart_id = (int) $conn->insert_id;
-                    
-                                $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, main_category_id, count, price,visits) 
+            $cart_id = (int) $conn->insert_id;
+
+            $res = mysqli_query($conn, "INSERT INTO cart_item(cart_id, main_category_id, count, price,visits) 
                                                         VALUES ( $cart_id, $main_category_id, $quantity, $estimate, $visits)");
-                                $cart_item_id =  (int) $conn->insert_id;
-                                if ($res and $res1) {
-                                    $response["data"] = array(
-                                        "status" => 1,
-                                        "message" => "Type 2B Item added to cart successfully",
-                                        "type" => $type
-                                    );
-                                    echo json_encode($response);
-                                    die(mysqli_error($conn));
-                                }
-                                //
-                                else {
-                                    $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in server");
-                                    echo json_encode($errorData);
-                    
-                                    die(mysqli_error($conn));
-                                }
-                        }
+            $cart_item_id =  (int) $conn->insert_id;
+            if ($res and $res1) {
+                $response["data"] = array(
+                    "status" => 1,
+                    "message" => "Type 2B Item added to cart successfully",
+                    "type" => $type
+                );
+                echo json_encode($response);
+                die(mysqli_error($conn));
+            }
+            //
+            else {
+                $errorData["data"] = array("status" => 0, "code" => 500, "message" => "Something went wrong in server");
+                echo json_encode($errorData);
+
+                die(mysqli_error($conn));
+            }
+        }
     }
 
     $q1 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
@@ -5029,7 +5023,7 @@ function helpCenter()
     $cat_id_index_map = [];
     $main_categories = [];
 
-    
+
     $sub_topics = mysqli_query($conn, "SELECT 
         sub.id AS sub_cat_id, sub.sub_title AS sub_topic, sub.description AS description,
         main.id AS main_cat_id, main.title AS name
@@ -5048,10 +5042,9 @@ function helpCenter()
             "description" => $row["description"]
         );
 
-        if(isset($cat_id_index_map[$main_cat_id])){
+        if (isset($cat_id_index_map[$main_cat_id])) {
             $main_categories[$cat_id_index_map[$main_cat_id]]["sub_categories"][] = $sub_category;
-        }
-        else{
+        } else {
             $main_categories[] = array(
                 "main_cat_id" => $main_cat_id,
                 "name" => $name,
@@ -5081,11 +5074,11 @@ function viewCart()
         cart.home_category_id AS home_category_id
         FROM cart 
         WHERE cart.user_id = $user_id");
-    if($cart_row = mysqli_fetch_assoc($cart)){
+    if ($cart_row = mysqli_fetch_assoc($cart)) {
         $home_category_id = (int) $cart_row["home_category_id"];
         $cart_id = (int) $cart_row["cartId"];
 
-        if($home_category_id == 1){
+        if ($home_category_id == 1) {
             $cart_items = [];
             $cart_items_result = mysqli_query($conn, "SELECT 
                 cart_item.id AS cartItemId,
@@ -5101,8 +5094,8 @@ function viewCart()
                 LEFT JOIN main_categories
                 ON cart_item.main_category_id = main_categories.id
                 WHERE cart_item.cart_id = $cart_id");
-            
-            while($cart_item_row = mysqli_fetch_assoc($cart_items_result)){
+
+            while ($cart_item_row = mysqli_fetch_assoc($cart_items_result)) {
                 $cart_items[] = $cart_item_row;
             }
 
@@ -5119,8 +5112,7 @@ function viewCart()
             );
             echo json_encode($errorData);
             die();
-        }
-        else{
+        } else {
             $details = mysqli_query($conn, "SELECT
             mc.name AS main_category_name,
             cart_item.main_category_id AS main_category_id,
@@ -5128,6 +5120,7 @@ function viewCart()
             cart_item.count AS count,
             hc.tax_percent AS tax_percent,
             ROUND(hc.tax_percent * cart_item.price / 100) AS tax_amount,
+            ( cart_item.price+ROUND(hc.tax_percent * cart_item.price / 100)) AS total,
             CONCAT(mc.name,' (For ',rv.visits,' ', IF(mc.division = 'A', 'Services', 'Visits'),' per year)') AS description,
             rv.visits AS visits
             FROM cart_item
@@ -5140,7 +5133,7 @@ function viewCart()
             WHERE cart_item.cart_id = $cart_id 
             ORDER BY rv.visits ASC
             LIMIT 1");
-            if($details_row = mysqli_fetch_assoc($details)){
+            if ($details_row = mysqli_fetch_assoc($details)) {
                 $details_row["status"] = 1;
                 $details_row["message"] = "cart for the user";
                 $details_row["type"] = 2;
@@ -5151,8 +5144,7 @@ function viewCart()
                 die();
             }
         }
-    }
-    else{
+    } else {
         $errorData["data"] = array("status" => 0,   "message" => "Cart is empty");
         echo json_encode($errorData);
         die();
@@ -5174,31 +5166,29 @@ function getHelp()
         $home_category_id = (int) $row['home_category_id'];
         $division = $row['division'];
         $name = $row['name'];
-        
-        if($home_category_id==2&$division=='A'){
-            $q1 = mysqli_query($conn,"SELECT rate, visits FROM rate_visits WHERE main_category_id=$mc_id ORDER BY rate ASC LIMIT 1");
-            $aa = mysqli_fetch_assoc($q1);
-            $rate = (int)$aa['rate'];
-            $visits = (int)$aa['visits'];
-            $description = "Rs. ".$rate." per year / ".$visits." Services";
-        }
-        else if($home_category_id==2&$division=='B'){
-            $q1 = mysqli_query($conn,"SELECT rate, visits, minutes_per_visit FROM rate_visits WHERE main_category_id=$mc_id ORDER BY rate ASC LIMIT 1");
-            
-            $aa = mysqli_fetch_assoc($q1);
-            $rate = (int)$aa['rate'];
-            $visits = (int)$aa['visits'];
-            $minutes_per_visit = (int)$aa['minutes_per_visit'];
-            $hours = ($visits*$minutes_per_visit)/60;
-            $description = "Rs. ".$rate." per year / ".$visits."Visits / ".$hours." hours";
-        }
-        else{
-            $description='';
-        }
-        
-        
 
-        $response["data"] = array("status" => 1, "message" => "Help", "how" => $how, "about" => $about, "image" => $image, "name" => $name, "description"=>$description);
+        if ($home_category_id == 2 & $division == 'A') {
+            $q1 = mysqli_query($conn, "SELECT rate, visits FROM rate_visits WHERE main_category_id=$mc_id ORDER BY rate ASC LIMIT 1");
+            $aa = mysqli_fetch_assoc($q1);
+            $rate = (int) $aa['rate'];
+            $visits = (int) $aa['visits'];
+            $description = "Rs. " . $rate . " per year / " . $visits . " Services";
+        } else if ($home_category_id == 2 & $division == 'B') {
+            $q1 = mysqli_query($conn, "SELECT rate, visits, minutes_per_visit FROM rate_visits WHERE main_category_id=$mc_id ORDER BY rate ASC LIMIT 1");
+
+            $aa = mysqli_fetch_assoc($q1);
+            $rate = (int) $aa['rate'];
+            $visits = (int) $aa['visits'];
+            $minutes_per_visit = (int) $aa['minutes_per_visit'];
+            $hours = ($visits * $minutes_per_visit) / 60;
+            $description = "Rs. " . $rate . " per year / " . $visits . "Visits / " . $hours . " hours";
+        } else {
+            $description = '';
+        }
+
+
+
+        $response["data"] = array("status" => 1, "message" => "Help", "how" => $how, "about" => $about, "image" => $image, "name" => $name, "description" => $description);
         echo json_encode($response);
         die();
     } else {
@@ -5212,10 +5202,10 @@ function getHelp()
 function customerConfirmAddress()
 {
     $conn = $GLOBALS['conn'];
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
 
-    
+
     if (!isset($input['user_id'])) {
         $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
         echo json_encode($errorData);
@@ -5250,8 +5240,8 @@ function customerConfirmAddress()
         die();
     }
     //END oF BLOCKED
-    
-    
+
+
     $user_address_id = (int) $input['user_address_id'];
     $user_id = (int) $input['user_id'];
 
@@ -5260,13 +5250,13 @@ function customerConfirmAddress()
     $addresscheck = mysqli_query($conn, "SELECT * from user_address WHERE id =$user_address_id ");
     if (mysqli_num_rows($addresscheck)) {
         $abc = mysqli_fetch_assoc($addresscheck);
-        $zone_id = (int)$abc['zone_id'];
+        $zone_id = (int) $abc['zone_id'];
         $q1 = mysqli_query($conn, "SELECT * from cart WHERE user_id = $user_id");
         if (mysqli_num_rows($q1)) {
             $q2 = mysqli_query($conn, "UPDATE cart SET user_address_id =$user_address_id WHERE user_id= $user_id  ");
             if ($q2) {
                 $rrr = mysqli_fetch_assoc($q1);
-                $cart_id = (int)$rrr['id'];
+                $cart_id = (int) $rrr['id'];
                 $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
                 $cartitems = [];
                 while ($rrow = mysqli_fetch_assoc($cartitemcheck)) {
@@ -5297,7 +5287,7 @@ function customerConfirmAddress()
                 $response["data"] = array(
                     "status" => 1,
                     "message" => "Address confirmed and added to cart",
-                    "zone_id"=> $zone_id,
+                    "zone_id" => $zone_id,
                     "user_id" => $user_id,
                     "cartId" => (int) $cartrow['id'],
                     "estimate" => (int) $cartrow['estimate'],
@@ -5313,24 +5303,22 @@ function customerConfirmAddress()
             else {
                 $errorData["error"] = array("status" => 0, "message" => "something went wrong in server");
                 echo json_encode($errorData);
-                
+
                 die(mysqli_error($conn));
             }
         }
         //
         else {
-            $q1 = mysqli_query($conn,"UPDATE user SET user_address_id = $user_address_id WHERE id = $user_id");
-            if($q1){
+            $q1 = mysqli_query($conn, "UPDATE user SET user_address_id = $user_address_id WHERE id = $user_id");
+            if ($q1) {
                 $errorData["data"] = array("status" => 1, "message" => "The selected address is stored for this user", "zone_id" => $zone_id);
                 echo json_encode($errorData);
-                die(mysqli_error($conn));                    
-            }
-            else{
+                die(mysqli_error($conn));
+            } else {
                 $errorData["error"] = array("status" => 0, "message" => "internal server error");
                 echo json_encode($errorData);
-                die(mysqli_error($conn));    
+                die(mysqli_error($conn));
             }
-            
         }
     }
     //
@@ -5350,9 +5338,9 @@ function cartSummary()
     $user_id = (int) $_GET['user_id'];
 
     $checkcart = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = $user_id");
-    if(mysqli_num_rows($checkcart)>0){
+    if (mysqli_num_rows($checkcart) > 0) {
         $cartidrow = mysqli_fetch_assoc($checkcart);
-        $cart_id = (int)$cartidrow['id'];
+        $cart_id = (int) $cartidrow['id'];
 
         $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
         $cartitems = [];
@@ -5381,19 +5369,19 @@ function cartSummary()
 
         $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
         $cartrow = mysqli_fetch_assoc($cartcheck);
-        
+
         //get slot name from slot_id
         $slot_id = (int) $cartrow['slot_id'];
-        $slotnamecheck = mysqli_query($conn,"SELECT name from slot WHERE id = $slot_id");
+        $slotnamecheck = mysqli_query($conn, "SELECT name from slot WHERE id = $slot_id");
         $abc = mysqli_fetch_assoc($slotnamecheck);
         $slot_name = $abc['name'];
-        
+
         //get usert address from user_address_id
         $user_address_id = (int) $cartrow['user_address_id'];
-        $addrcheck = mysqli_query($conn,"SELECT address from user_address WHERE id = $user_address_id");
+        $addrcheck = mysqli_query($conn, "SELECT address from user_address WHERE id = $user_address_id");
         $abc = mysqli_fetch_assoc($addrcheck);
         $address = $abc['address'];
-        
+
         $response["data"] = array(
             "status" => 1,
             "message" => "cart summary for the user",
@@ -5401,28 +5389,27 @@ function cartSummary()
             "cartId" => (int) $cartrow['id'],
             "estimate" => (int) $cartrow['estimate'],
             "user_address_id" => (int) $cartrow['user_address_id'],
-            "user_address"=>$address,
+            "user_address" => $address,
             "date" => $cartrow['date'],
             "slot_id" => (int) $cartrow['slot_id'],
-            "slot_name"=>$slot_name,
+            "slot_name" => $slot_name,
             "cartItems" => $cartitems
         );
         echo json_encode($response);
         die(mysqli_error($conn));
     }
     //
-    else{
+    else {
         $errorData["error"] = array("status" => 0, "code" => 404, "message" => "No items in the cart for this user.");
         echo json_encode($errorData);
         header("HTTP/1.1 404");
         die(mysqli_error($conn));
     }
-
-  
 }
 
 
-function type23Tariff(){
+function type23Tariff()
+{
     $conn = $GLOBALS['conn'];
 
     $input = json_decode(file_get_contents('php://input'), true);
@@ -5442,14 +5429,14 @@ function type23Tariff(){
     }
     $main_category_id = (int) $_GET['category_id'];
     $q = mysqli_query($conn, "SELECT * FROM rate_visits WHERE main_category_id = $main_category_id ORDER BY rate ASC");
-    if(mysqli_num_rows($q)==0){
+    if (mysqli_num_rows($q) == 0) {
         $errorData["data"] = array("status" => 0,   "message" => "No Tariff found for this category");
         echo json_encode($errorData);
         die();
     }
-    while($row = mysqli_fetch_assoc($q)){
+    while ($row = mysqli_fetch_assoc($q)) {
         $minutes_per_visit = (int) $row['minutes_per_visit'];
-        if($minutes_per_visit==0){
+        if ($minutes_per_visit == 0) {
             $hours = (((int) $row['visits']) * $minutes_per_visit) / 60;
             $tariff[] = array(
                 "tariff_id" => (int) $row['id'],
@@ -5457,8 +5444,7 @@ function type23Tariff(){
                 "visits" => (int) $row['visits'],
                 "hours" => ''
             );
-        }
-        else{
+        } else {
             $hours = (((int) $row['visits']) * $minutes_per_visit) / 60;
             $tariff[] = array(
                 "tariff_id" => (int) $row['id'],
@@ -5467,15 +5453,15 @@ function type23Tariff(){
                 "hours" => $hours
             );
         }
-
     }
-    $response['data']=array("status"=>1, "message"=>"tariff for main category id: $main_category_id", "tariff"=>$tariff);
+    $response['data'] = array("status" => 1, "message" => "tariff for main category id: $main_category_id", "tariff" => $tariff);
     echo json_encode($response);
     die();
 }
 
 
-function customerChooseServiceList(){
+function customerChooseServiceList()
+{
     $conn = $GLOBALS['conn'];
     $q = mysqli_query($conn, "SELECT id, icon, name FROM main_categories WHERE home_category_id = 1");
     if (mysqli_num_rows($q) == 0) {
@@ -5483,9 +5469,9 @@ function customerChooseServiceList(){
         echo json_encode($errorData);
         die();
     }
-    while($row = mysqli_fetch_assoc($q)){
+    while ($row = mysqli_fetch_assoc($q)) {
         $mainCat[] = array(
-            "mainCategoryId"=>(int)$row['id'],
+            "mainCategoryId" => (int) $row['id'],
             "icon" => $row['icon'],
             "title" =>  $row['name']
         );
@@ -5496,11 +5482,12 @@ function customerChooseServiceList(){
 }
 
 
-function deleteProductFromCart(){
+function deleteProductFromCart()
+{
     $conn = $GLOBALS['conn'];
-    
+
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     if (!isset($input['user_id'])) {
         $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
         echo json_encode($errorData);
@@ -5537,7 +5524,7 @@ function deleteProductFromCart(){
         die();
     }
     $product_id = (int) $input['product_id'];
-    
+
     if (!isset($input['cart_id'])) {
         $errorData["data"] = array("status" => 0,   "message" => "No cart_id is supplied");
         echo json_encode($errorData);
@@ -5557,8 +5544,7 @@ function deleteProductFromCart(){
         $errorData["data"] = array("status" => 0,   "message" => "There is no cart items for this user.");
         echo json_encode($errorData);
         die(mysqli_error($conn));
-    }
-    else  if (mysqli_num_rows($checkcart) > 0) {
+    } else  if (mysqli_num_rows($checkcart) > 0) {
         $abc = mysqli_fetch_assoc($checkcart);
 
         $cartitemscounthere = mysqli_query($conn, "SELECT * FROM cart_item WHERE cart_id = $cart_id");
@@ -5578,12 +5564,11 @@ function deleteProductFromCart(){
                 $response["data"] = array("status" => 2, "message" => "Item deleted successfully, cart is empty now", "cart" => array());
                 echo json_encode($response);
                 die(mysqli_error($conn));
-                
             }
         }
         //
         else if (mysqli_num_rows($cartitemscounthere) > 1) {
-            
+
             /////////////////////////////////not only this item, some other items also there in cart for this user
             $checkcartitem = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id = $cart_id  AND product_id = $product_id LIMIT 1 ");
             if (mysqli_num_rows($checkcartitem) == 0) {
@@ -5597,50 +5582,50 @@ function deleteProductFromCart(){
                 $checkcartitemcount = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id = $cart_id  AND product_id = $product_id ");
                 $xyz = mysqli_fetch_assoc($checkcartitemcount);
                 $price = (int) $xyz['price'];
-                    mysqli_query($conn, "DELETE FROM cart_item WHERE cart_id = $cart_id  AND product_id = $product_id");
+                mysqli_query($conn, "DELETE FROM cart_item WHERE cart_id = $cart_id  AND product_id = $product_id");
 
-                    mysqli_query($conn, "UPDATE cart SET estimate = estimate-$price WHERE user_id = $user_id");
+                mysqli_query($conn, "UPDATE cart SET estimate = estimate-$price WHERE user_id = $user_id");
 
-                    $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
-                    $cartitems = [];
-                    while ($rrow = mysqli_fetch_assoc($cartitemcheck)) {
-                        $productId = (int) $rrow['product_id'];
-                        $checkname = mysqli_query($conn, "SELECT product_title, product_description from products WHERE id = $productId");
-                        $r = mysqli_fetch_assoc($checkname);
-                        $product_title = $r['product_title'];
-                        $product_description = $r['product_description'];
+                $cartitemcheck = mysqli_query($conn, "SELECT * from cart_item WHERE cart_id=$cart_id ");
+                $cartitems = [];
+                while ($rrow = mysqli_fetch_assoc($cartitemcheck)) {
+                    $productId = (int) $rrow['product_id'];
+                    $checkname = mysqli_query($conn, "SELECT product_title, product_description from products WHERE id = $productId");
+                    $r = mysqli_fetch_assoc($checkname);
+                    $product_title = $r['product_title'];
+                    $product_description = $r['product_description'];
 
-                        $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
+                    $checkproductname = mysqli_query($conn, "SELECT mc.name FROM main_categories mc INNER JOIN sub_categories sc ON sc.main_category_id=mc.id
                                                                 INNER JOIN products p on p.category_id = sc.id AND p.id=$productId ");
-                        $rw = mysqli_fetch_assoc($checkproductname);
-                        $mainCategoryName = $rw['name'];
+                    $rw = mysqli_fetch_assoc($checkproductname);
+                    $mainCategoryName = $rw['name'];
 
-                        $cartitems[] = array(
-                            "cartItemId" => (int) $rrow['id'],
-                            "productId" => (int) $rrow['product_id'],
-                            "productTitle" => $product_title,
-                            "productDescription" => $product_description,
-                            "mainCategoryName" => $mainCategoryName,
-                            "count" => (int) $rrow['count'],
-                            "price" => (int) $rrow['price']
-                        );
-                    }
-
-                    $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
-                    $cartrow = mysqli_fetch_assoc($cartcheck);
-                    $response["data"] = array(
-                        "status" => 1,
-                        "message" => "Item deleted from cart successfully",
-                        "user_id" => $user_id,
-                        "cartId" => (int) $cartrow['id'],
-                        "estimate" => (int) $cartrow['estimate'],
-                        "user_address_id" => (int) $cartrow['user_address_id'],
-                        "date" => $cartrow['date'],
-                        "slot_id" => (int) $cartrow['slot_id'],
-                        "cartItems" => $cartitems
+                    $cartitems[] = array(
+                        "cartItemId" => (int) $rrow['id'],
+                        "productId" => (int) $rrow['product_id'],
+                        "productTitle" => $product_title,
+                        "productDescription" => $product_description,
+                        "mainCategoryName" => $mainCategoryName,
+                        "count" => (int) $rrow['count'],
+                        "price" => (int) $rrow['price']
                     );
-                    echo json_encode($response);
-                    die(mysqli_error($conn));
+                }
+
+                $cartcheck = mysqli_query($conn, "SELECT * from cart WHERE id=$cart_id ");
+                $cartrow = mysqli_fetch_assoc($cartcheck);
+                $response["data"] = array(
+                    "status" => 1,
+                    "message" => "Item deleted from cart successfully",
+                    "user_id" => $user_id,
+                    "cartId" => (int) $cartrow['id'],
+                    "estimate" => (int) $cartrow['estimate'],
+                    "user_address_id" => (int) $cartrow['user_address_id'],
+                    "date" => $cartrow['date'],
+                    "slot_id" => (int) $cartrow['slot_id'],
+                    "cartItems" => $cartitems
+                );
+                echo json_encode($response);
+                die(mysqli_error($conn));
             }
         }
     }
@@ -5676,8 +5661,144 @@ function customerBookNow()
     }
     //END oF BLOCKED
 
+    if (isset($input['visit_id'])) {
+        //////////////////////////////////////////////////THIS IS FOR BOOKING 2A or 2B ITEM SERVICE TERM//////////////////////
+        if (empty($input['visit_id'])) {
+            $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+            echo json_encode($errorData);
+
+            die();
+        }
+        $visit_id = (int) $input['visit_id'];
+
+        validateuserIdVisitId($conn, $user_id, $visit_id);
+
+        ////////////////////////
+        if (!isset($input['slot_id'])) {
+            $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
+            echo json_encode($errorData);
+
+            die();
+        }
+        if (empty($input['slot_id'])) {
+            $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
+            echo json_encode($errorData);
+
+            die();
+        }
+        $slot_id = (int) $input['slot_id'];
+        validateSlotId($conn, $slot_id);
+
+        if (!isset($input['date'])) {
+            $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+            echo json_encode($errorData);
+
+            die();
+        }
+        if (empty($input['date'])) {
+            $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+            echo json_encode($errorData);
+
+            die();
+        }
+        $dateNew = $input['date'];
+        date_default_timezone_set('Asia/Calcutta');
+        $today = date('Y-m-d');
+        if (strtotime($dateNew) < strtotime($today)) {
+            $errorData["data"] = array("status" => 0,   "message" => "Given date is in past.");
+            echo json_encode($errorData);
+            die();
+        }
+
+        $timenow =  date('h:i:s');
+        $tt = mysqli_query($conn, "SELECT start FROM slot WHERE id = $slot_id");
+        $ch = mysqli_fetch_assoc($tt);
+        $startNew = $ch['start'];
+        $minutesLeftNew = strtotime($startNew) - strtotime($timenow);
+        if ($minutesLeftNew < 0) {
+            $errorData["data"] = array("status" => 0,   "message" => "Given date is today but time is in past. Invalid input");
+            echo json_encode($errorData);
+            die();
+        }
+
+
+        $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking_item_23 b INNER JOIN slot s ON b.slot_id  = s.id WHERE b.id = $visit_id LIMIT 1");
+        $bookingdetails = mysqli_fetch_assoc($q1);
+
+        $rescheduled_count = (int) $bookingdetails['reschedule_count'];
+        if ($rescheduled_count >= 2) {
+            $errorData["data"] = array("status" => 0,   "message" => "Reschedule limit exceeded; cannot Book now");
+            echo json_encode($errorData);
+            die();
+        }
+
+        $status = $bookingdetails['status'];
+        if ($status == 'CANCELLED') {
+            $errorData["data"] = array("status" => 0,   "message" => "This booking already cancelled");
+            echo json_encode($errorData);
+            die();
+        }
+        //////////////////////
+
+        $user_address_id = (int) $input['user_address_id'];
+        $xyz = mysqli_query($conn, "SELECT zone_id FROM user_address WHERE id = $user_address_id");
+        $bbc = mysqli_fetch_assoc($xyz);
+        $zone_id = (int) $bbc['zone_id'];
+        checkSlotAvailable($conn, $slot_id, $zone_id, $dateNew);
+
+        $updated = date('Y-m-d');
+
+        $q11 = mysqli_query($conn, "SELECT b.* FROM booking_item_23 b WHERE b.id = $visit_id LIMIT 1");
+        $bookingdetailss = mysqli_fetch_assoc($q11);
+        $main_category_id = (int) $bookingdetailss['main_category_id'];
+        $checkdiv = mysqli_query($conn, "SELECT division FROM main_categories WHERE id = $main_category_id");
+        $divget = mysqli_fetch_assoc($checkdiv);
+        $division = $divget['division'];
+        // echo $division;
+
+        if ($division == 'A') {
+            $booknow = mysqli_query($conn, "UPDATE booking_item_23 SET status = 'PLACED', date = '$dateNew', slot_id = $slot_id, user_address_id = $user_address_id, updated = '$updated' WHERE id = $visit_id  ");
+            if ($booknow) {
+                $errorData["data"] = array("status" => 1,   "message" => "Booking made by the user successfully For TYPE 2A");
+                echo json_encode($errorData);
+                die();
+            } else {
+                $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+                echo json_encode($errorData);
+                die();
+            }
+        } else if ($division == 'B') {
+            if (!isset($input['choose'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "This visit_id is for type 2B; No choose is supplied");
+                echo json_encode($errorData);
+
+                die();
+            }
+            if (empty($input['choose'])) {
+                $errorData["data"] = array("status" => 0,   "message" => "This visit_id is for type 2B; No choose is supplied");
+                echo json_encode($errorData);
+
+                die();
+            }
+            $main_category_id_chosen = (int) $input['choose'];
+
+            $booknow = mysqli_query($conn, "UPDATE booking_item_23 SET status = 'PLACED', date = '$dateNew', slot_id = $slot_id, user_address_id = $user_address_id, main_category_id_chosen = $main_category_id_chosen, updated = '$updated' WHERE id = $visit_id  ");
+
+            if ($booknow) {
+                $errorData["data"] = array("status" => 1,   "message" => "Booking made by the user successfully For TYPE 2B");
+                echo json_encode($errorData);
+                die();
+            } else {
+                $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+                echo json_encode($errorData);
+                die();
+            }
+        }
+        /////////////////////////////////////END OF BOOKING FOR SERVICE TERM/////////////////////////////////////////
+    }
+
     if (!isset($input['cart_id'])) {
-        $errorData["data"] = array("status" => 0,   "message" => "No cart_id is supplied");
+        $errorData["data"] = array("status" => 0,   "message" => "No cart_id is suppliedd");
         echo json_encode($errorData);
 
         die();
@@ -5702,7 +5823,7 @@ function customerBookNow()
 
 
     if ($home_category_id == 1) {
-        
+
         //////////////////////////////TYPE 1///////////////////////////////////////////
         $estimate = (int) $abc['estimate'];
         $user_address_id = (int) $abc['user_address_id'];
@@ -5711,16 +5832,16 @@ function customerBookNow()
         $rescheduled_count = 0;
 
 
-        $xyz = mysqli_query($conn,"SELECT zone_id FROM user_address WHERE id = $user_address_id");
+        $xyz = mysqli_query($conn, "SELECT zone_id FROM user_address WHERE id = $user_address_id");
         $bbc = mysqli_fetch_assoc($xyz);
         $zone_id = (int) $bbc['zone_id'];
-        
+
         checkSlotAvailable($conn, $slot_id, $zone_id, $date);
 
         $taxcheck = mysqli_query($conn, "SELECT tax_percent FROM home_categories WHERE id = $home_category_id");
         $aa = mysqli_fetch_assoc($taxcheck);
         $tax_percent = (int) $aa['tax_percent'];
-        $tax_amount = ceil(($tax_percent * $estimate)/100);
+        $tax_amount = ceil(($tax_percent * $estimate) / 100);
         $total = $estimate + $tax_amount;
         $amount_payable = $total;
         $credits = 3;
@@ -5735,28 +5856,27 @@ function customerBookNow()
 
         $today = date('ymd');
         $fircheck = mysqli_query($conn, "SELECT * FROM booking WHERE id LIKE '$today%' ORDER BY id DESC LIMIT 1");
-        
-        if(mysqli_num_rows($fircheck)==0){
-            $booking_id = $today.'001';
-        }
-        else{
+
+        if (mysqli_num_rows($fircheck) == 0) {
+            $booking_id = $today . '001';
+        } else {
             $zz = mysqli_fetch_assoc($fircheck);
-            $testt = (int)$zz['id'];
-            $booking_id = $testt+1;
+            $testt = (int) $zz['id'];
+            $booking_id = $testt + 1;
         }
 
 
         $q1 = mysqli_query($conn, "INSERT INTO booking(id, home_category_id, user_id, estimate, user_address_id, date, slot_id, rescheduled_count, tax_percent, tax_amount, total, amount_payable, credits, status, payment, created, updated)
                                 VALUES($booking_id, $home_category_id, $user_id, $estimate, $user_address_id, '$date', $slot_id, $rescheduled_count, $tax_percent, $tax_amount, $total, $amount_payable, $credits, '$status', '$payment', '$created','$updated' )");
-        
+
         $cartitems = mysqli_query($conn, "SELECT * FROM cart_item WHERE cart_id = $cart_id");
         $params = NULL;
-        while($cartrow = mysqli_fetch_assoc($cartitems)){
-            $product_id = (int)$cartrow['product_id'];
+        while ($cartrow = mysqli_fetch_assoc($cartitems)) {
+            $product_id = (int) $cartrow['product_id'];
             $count = (int) $cartrow['count'];
             $price = (int) $cartrow['price'];
 
-            $params = "(". $booking_id.",". $product_id.",".$count.",".$price."),";
+            $params = "(" . $booking_id . "," . $product_id . "," . $count . "," . $price . "),";
         }
         $params = rtrim($params, ',');
 
@@ -5764,19 +5884,16 @@ function customerBookNow()
 
         $q3 = mysqli_query($conn, "DELETE FROM cart WHERE user_id = $user_id");
 
-        if($q1 and $q2 and $q3){
+        if ($q1 and $q2 and $q3) {
             $errorData["data"] = array("status" => 1,   "message" => "Type 1 - Booking made by the user successfully");
             echo json_encode($errorData);
             die(mysqli_error($conn));
-        }
-        else{
+        } else {
             $errorData["data"] = array("status" => 0,   "message" => "internal server error");
             echo json_encode($errorData);
             die(mysqli_error($conn));
         }
-    }
-    
-    else if($home_category_id==2){
+    } else if ($home_category_id == 2) {
         //////////////////////////////////////////////////////TYPE 2////////////////////////////////////////////////////
         $estimate = (int) $abc['estimate'];
         $taxcheck = mysqli_query($conn, "SELECT tax_percent FROM home_categories WHERE id = $home_category_id");
@@ -5816,12 +5933,12 @@ function customerBookNow()
         $main_category_id = (int) $cartrow['main_category_id'];
         $quantity = (int) $cartrow['count'];
         $visits = (int) $cartrow['visits'];
-        
-        $credits=3;
 
-        $i=1;
-        while($i<=$visits){
-            $params .= "(" . $booking_id . "," . $main_category_id . "," . $quantity . "," . $i . "," .$credits .",'".$created."','".$updated."'". "),";
+        $credits = 3;
+
+        $i = 1;
+        while ($i <= $visits) {
+            $params .= "(" . $booking_id . "," . $main_category_id . "," . $quantity . "," . $i . "," . $credits . ",'" . $created . "','" . $updated . "'" . "),";
             $i++;
         }
         $params = rtrim($params, ',');
@@ -5842,13 +5959,14 @@ function customerBookNow()
     }
 }
 
-function checkSlotAvailable($conn, $slot_id, $zone_id, $date){
+function checkSlotAvailable($conn, $slot_id, $zone_id, $date)
+{
     if (strtotime($date) < strtotime(date('Y-m-d'))) {
         $errorData["data"] = array("status" => 0,   "message" => "Past date is supplied");
         echo json_encode($errorData);
         die(mysqli_error($conn));
     }
-    
+
     checkZoneId($conn, $zone_id);
 
     $res = mysqli_query($conn, "SELECT slot_id, 
@@ -5858,39 +5976,39 @@ function checkSlotAvailable($conn, $slot_id, $zone_id, $date){
             INNER JOIN slot s ON s.id = b.slot_id
             WHERE b.slot_id = $slot_id");
 
-        if (mysqli_num_rows($res)) {
-            $current_row = mysqli_fetch_assoc($res);
-            //check already booked
-            $bookedalreadycheck = mysqli_query($conn, "SELECT b.slot_id,COUNT(b.emp_id) as count FROM booking b INNER JOIN slot s ON b.slot_id = s.id
+    if (mysqli_num_rows($res)) {
+        $current_row = mysqli_fetch_assoc($res);
+        //check already booked
+        $bookedalreadycheck = mysqli_query($conn, "SELECT b.slot_id,COUNT(b.emp_id) as count FROM booking b INNER JOIN slot s ON b.slot_id = s.id
                                                     	WHERE b.slot_id=$slot_id
                                                         AND b.date='$date'
                                                         AND b.status IN ('PLACED','ACCEPTED','RESCHEDULED')
                                                         AND b.payment = 'PENDING'");
-            $bookedCount = 0;
-            if (mysqli_num_rows($bookedalreadycheck) > 0) {
-                $thisrow = mysqli_fetch_assoc($bookedalreadycheck);
-                $bookedCount = (int) $thisrow['count'];
-            }
-            $resultantCount = (int) $current_row['count'] - $bookedCount;
-        //already booked block ends here
-            if ($resultantCount > 0) {
-                //count available now
-                return true;
-            }
-        //
-            else {
-                //count = 0, so unavailable at the moment
-                $errorData["data"] = array("status" => 0,   "message" => "This slot is not available for given data");
-                echo json_encode($errorData);
-                die(mysqli_error($conn));
-            }
+        $bookedCount = 0;
+        if (mysqli_num_rows($bookedalreadycheck) > 0) {
+            $thisrow = mysqli_fetch_assoc($bookedalreadycheck);
+            $bookedCount = (int) $thisrow['count'];
         }
-    //
+        $resultantCount = (int) $current_row['count'] - $bookedCount;
+        //already booked block ends here
+        if ($resultantCount > 0) {
+            //count available now
+            return true;
+        }
+        //
         else {
-            $errorData["data"] = array("status" => 0,   "message" => "This slot is not available");
+            //count = 0, so unavailable at the moment
+            $errorData["data"] = array("status" => 0,   "message" => "This slot is not available for given data");
             echo json_encode($errorData);
             die(mysqli_error($conn));
         }
+    }
+    //
+    else {
+        $errorData["data"] = array("status" => 0,   "message" => "This slot is not available");
+        echo json_encode($errorData);
+        die(mysqli_error($conn));
+    }
 }
 
 
@@ -6081,17 +6199,17 @@ function viewCustomerBookings()
     }
 
     while ($bookingrows = mysqli_fetch_assoc($q2)) {
-        
+
         $booking_id = (int) $bookingrows['id'];
         $qq = mysqli_query($conn, "SELECT mc.division, mc.icon, mc.name, bi23.status, bi23.servicer_status, bi23.payment, bi23.payment_type,
                                     (SELECT name FROM main_categories mcc WHERE mcc.id = bi23.main_category_id_chosen) AS main_category_chosen_name
                                     FROM booking_item_23 bi23 INNER JOIN main_categories mc ON bi23.main_category_id = mc.id WHERE bi23.booking_id= $booking_id");
         $subscripdetails = mysqli_fetch_assoc($qq);
-        
-          $checkavailable = mysqli_query($conn, "SELECT COUNT(id) AS services_available FROM `booking_item_23` WHERE `booking_id` = $booking_id AND payment IS NULL");
+
+        $checkavailable = mysqli_query($conn, "SELECT COUNT(id) AS services_available FROM `booking_item_23` WHERE `booking_id` = $booking_id AND payment IS NULL");
         $aa = mysqli_fetch_assoc($checkavailable);
-        
-        
+
+
         $subscriptionsArray[] = array(
             "booking_id" => (int) $bookingrows['id'],
             "booking_status" => $bookingrows['status'],
@@ -6099,15 +6217,13 @@ function viewCustomerBookings()
             "payment" => $bookingrows['payment'],
             "payment_type" => $bookingrows['payment_type'],
             "expiry" => $bookingrows['expiry'],
-            "division"=>$subscripdetails['division'],
-            "main_category_icon"=>$subscripdetails['icon'],
-            "main_category_name"=> $subscripdetails['name'],
-            "main_category_id_chosen"=>(int) $subscripdetails['main_category_id_chosen'],
-            "main_category_chosen_name"=>$subscripdetails['main_category_chosen_name'],
-            "services_available"=>(int) $aa['services_available']
+            "division" => $subscripdetails['division'],
+            "main_category_icon" => $subscripdetails['icon'],
+            "main_category_name" => $subscripdetails['name'],
+            "main_category_id_chosen" => (int) $subscripdetails['main_category_id_chosen'],
+            "main_category_chosen_name" => $subscripdetails['main_category_chosen_name'],
+            "services_available" => (int) $aa['services_available']
         );
-
-
     }
 
     $response['data'] = array(
@@ -6201,7 +6317,7 @@ function customerCancelBooking()
     $updated = date('Y-m-d');
 
     $timenow =  date('Y-m-d h:i:s');
-    $booked_time = $date." ". $start;
+    $booked_time = $date . " " . $start;
     $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
     if ($minutesLeft < 0) {
         $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
@@ -6357,7 +6473,7 @@ function customerRescheduleBooking()
     $updated = date('Y-m-d');
 
     $timenow =  date('Y-m-d h:i:s');
-    $booked_time = $date." ". $start;
+    $booked_time = $date . " " . $start;
     $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
     if ($minutesLeft < 0) {
         $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
@@ -6474,7 +6590,7 @@ function customerViewSubscription()
             "visit_id" => (int) $row['id'],
             "icon" => $row['icon'],
             "name" => "Service Term " . (int) $row['visit_number'],
-            "status" =>  $row['status']==NULL?'Available': $row['status'],
+            "status" =>  $row['status'] == NULL ? 'Available' : $row['status'],
             "booked_on" =>  $row['date'] == NULL ? '' : $row['date']
         );
     }
@@ -6502,7 +6618,7 @@ function customerViewSubscription()
                                     GROUP BY bi.`id`
                                     LIMIT 1");
     $row2 = mysqli_fetch_assoc($q2);
-    $q3 = mysqli_query($conn,"SELECT created FROM booking WHERE id = $booking_id");
+    $q3 = mysqli_query($conn, "SELECT created FROM booking WHERE id = $booking_id");
     $tx = mysqli_fetch_assoc($q3);
     $subs = $tx['created'];
     $response['data'] = array(
@@ -6524,7 +6640,8 @@ function customerViewSubscription()
     die();
 }
 
-function customerViewSingleTerm(){
+function customerViewSingleTerm()
+{
     $conn = $GLOBALS['conn'];
     $input = json_decode(file_get_contents('php://input'), true);
 
@@ -6565,11 +6682,12 @@ function customerViewSingleTerm(){
     $visit_id = (int) $_GET['visit_id'];
     validateuserIdVisitId($conn, $user_id, $visit_id);
 
-    $q1 = mysqli_query($conn,"SELECT mc.name,
+    $q1 = mysqli_query($conn, "SELECT mc.name,
                 (SELECT name FROM main_categories mcc WHERE mcc.id = bi.main_category_id_chosen)AS main_category_chosen_name,
                 bi.* FROM booking_item_23 bi INNER JOIN main_categories mc ON mc.id = bi.`main_category_id` WHERE bi.id = $visit_id");
     $row = mysqli_fetch_assoc($q1);
 
+    $term_name = "Service Term - " . $row['visit_number'];
     $otp = (int) $row['otp'];
     $main_category_id = (int) $row['main_category_id'];
     $main_category_name = $row['name'];
@@ -6608,16 +6726,17 @@ function customerViewSingleTerm(){
     $response['data'] = array(
         "status" => 1,
         "message" => "Subscription Term Details",
-        "visit_id"=>$visit_id,
+        "visit_id" => $visit_id,
+        "term_name" => $term_name,
         "user_id" => $user_id,
         "otp" => $otp,
-        "employee_details" => $employeeDetails==NULL?array(): $employeeDetails,
-        "main_category_id"=>$main_category_id,
-        "main_category_name"=>$main_category_name,
-        "main_category_id_chosen"=>$main_category_id_chosen==NULL?0: (int)$main_category_id_chosen,
-        "main_category_chosen_name"=>$main_category_chosen_name==NULL?'': $main_category_chosen_name,
-        "device_serial_number"=>$device_serial_number==NULL?'': $device_serial_number,
-        "booking_id"=>$booking_id,
+        "employee_details" => $employeeDetails == NULL ? array() : $employeeDetails,
+        "main_category_id" => $main_category_id,
+        "main_category_name" => $main_category_name,
+        "main_category_id_chosen" => $main_category_id_chosen == NULL ? 0 : (int) $main_category_id_chosen,
+        "main_category_chosen_name" => $main_category_chosen_name == NULL ? '' : $main_category_chosen_name,
+        "device_serial_number" => $device_serial_number == NULL ? '' : $device_serial_number,
+        "booking_id" => $booking_id,
         "rescheduled_count" => (int) $rescheduled_count,
         "booking_status" => $booking_status,
         "servicer_status" => $servicer_status,
@@ -6626,7 +6745,7 @@ function customerViewSingleTerm(){
         "slot" => $slot
     );
     echo json_encode($response);
-    die(); 
+    die();
 }
 
 function validateuserIdVisitId($conn, $user_id, $visit_id)
@@ -6642,8 +6761,9 @@ function validateuserIdVisitId($conn, $user_id, $visit_id)
 }
 
 
-function customerRescheduleTerm(){
-     $conn = $GLOBALS['conn'];
+function customerRescheduleTerm()
+{
+    $conn = $GLOBALS['conn'];
 
     $input = json_decode(file_get_contents('php://input'), true);
 
@@ -6684,7 +6804,7 @@ function customerRescheduleTerm(){
     $visit_id = (int) $input['visit_id'];
     validateuserIdVisitId($conn, $user_id, $visit_id);
 
-    
+
     if (!isset($input['slot_id'])) {
         $errorData["data"] = array("status" => 0,   "message" => "No slot_id is supplied");
         echo json_encode($errorData);
@@ -6749,7 +6869,7 @@ function customerRescheduleTerm(){
         echo json_encode($errorData);
         die();
     }
-///////////////////////////////////
+    ///////////////////////////////////
     $date = $bookingdetails['date'];
     date_default_timezone_set('Asia/Calcutta');
     $today = date('Y-m-d');
@@ -6764,9 +6884,9 @@ function customerRescheduleTerm(){
     $updated = date('Y-m-d');
 
     $timenow =  date('Y-m-d h:i:s');
-    $booked_time = $date." ". $start;
+    $booked_time = $date . " " . $start;
     $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
-    
+
     if ($minutesLeft < 0) {
         $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
         echo json_encode($errorData);
@@ -6797,7 +6917,8 @@ function customerRescheduleTerm(){
     }
 }
 
-function CustomerCancelTerm(){
+function CustomerCancelTerm()
+{
     $conn = $GLOBALS['conn'];
     $input = json_decode(file_get_contents('php://input'), true);
 
@@ -6842,7 +6963,7 @@ function CustomerCancelTerm(){
 
 
     //////////////////////////////////////////////////////////////////////////////////
-     $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking_item_23 b INNER JOIN slot s ON b.slot_id  = s.id WHERE b.id = $visit_id LIMIT 1");
+    $q1 = mysqli_query($conn, "SELECT b.*, s.start FROM booking_item_23 b INNER JOIN slot s ON b.slot_id  = s.id WHERE b.id = $visit_id LIMIT 1");
     $bookingdetails = mysqli_fetch_assoc($q1);
 
     $status = $bookingdetails['status'];
@@ -6851,7 +6972,7 @@ function CustomerCancelTerm(){
         echo json_encode($errorData);
         die();
     }
-///////////////////////////////////
+    ///////////////////////////////////
     $date = $bookingdetails['date'];
     date_default_timezone_set('Asia/Calcutta');
     $today = date('Y-m-d');
@@ -6867,7 +6988,7 @@ function CustomerCancelTerm(){
 
     $timenow =  date('Y-m-d h:i:s');
 
-    $booked_time = $date." ". $start;
+    $booked_time = $date . " " . $start;
     $minutesLeft = CEIL((strtotime($booked_time) - strtotime($timenow)) / 60);
     if ($minutesLeft < 0) {
         $errorData["data"] = array("status" => 0,   "message" => "Booked time is in past. Invalid input");
@@ -6893,4 +7014,1208 @@ function CustomerCancelTerm(){
     }
 }
 
-?>
+
+function rateCard()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_GET['sub_category_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No sub_category_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['sub_category_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No sub_category_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $sub_category_id = (int) $_GET['sub_category_id'];
+
+    $q2 = mysqli_query($conn, "SELECT name FROM sub_categories WHERE id = $sub_category_id");
+    if (mysqli_num_rows($q2) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Invalid sub category ID or no spare part list found");
+        echo json_encode($errorData);
+        die();
+    }
+    $row2 = mysqli_fetch_assoc($q2);
+    $subCategoryName = $row2['name'];
+
+    $q1 = mysqli_query($conn, "SELECT * FROM rate_card WHERE sub_category_id = $sub_category_id ");
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Invalid sub category ID or no spare part list found");
+        echo json_encode($errorData);
+        die();
+    }
+    while ($row = mysqli_fetch_assoc($q1)) {
+        $rateCard[] = array(
+            "sparePartId" => (int) $row['id'],
+            "sparePartName" => $row['name'],
+            "cost" => (int) $row['cost']
+        );
+    }
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Spare part details",
+        "subCategoryId" => $sub_category_id,
+        "subCategoryName" => $subCategoryName,
+        "rateCard" => $rateCard
+    );
+    echo json_encode($response);
+    die();
+}
+
+
+function employeeOnGoing()
+{
+    $conn = $GLOBALS['conn'];
+
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    date_default_timezone_set('Asia/Calcutta');
+    $today_date =  date('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+1 day');
+    $tomorrow_date =  $datetime->format('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+2 day');
+    $dayaftertomorrow_date =  $datetime->format('Y-m-d');
+
+    $q1 = mysqli_query($conn, "SELECT * FROM booking WHERE emp_id = $emp_id AND date IN ('$today_date','$tomorrow_date','$dayaftertomorrow_date') ORDER BY id DESC");
+    $q2 = mysqli_query($conn, "SELECT * FROM booking_item_23 WHERE emp_id = $emp_id AND date IN ('$today_date','$tomorrow_date','$dayaftertomorrow_date') ORDER BY id DESC");
+
+    if ((mysqli_num_rows($q1) == 0) && (mysqli_num_rows($q1) == 0)) {
+        $all[] = array();
+        $today[] = array();
+        $tomorrow[] = array();
+        $dayaftertomo[] = array();
+    }
+    else {
+        ///////////////////////////NORMAL BOOKING//////////////////////////////////////////////////////////////
+        while ($booking_row = mysqli_fetch_assoc($q1)) {
+            $date = $booking_row['date'];
+            if ($date == $today_date) {
+                //////////////////////////////////////TODAY////////////////////////////////////////
+                $user_id = (int) $booking_row['user_id'];
+                $getname = mysqli_query($conn, "SELECT u.name, u.user_address_id, ua.address FROM user u INNER JOIN user_address ua ON u.id = ua.user_id WHERE u.id=$user_id AND ua.id = u.user_address_id LIMIT 1");
+                $customerDetails = mysqli_fetch_assoc($getname);
+
+                $slot_id = (int) $booking_row['slot_id'];
+                $getslot = mysqli_query($conn, "SELECT name FROM slot WHERE id=$slot_id LIMIT 1");
+                $slotDetails = mysqli_fetch_assoc($getslot);
+                $slot_name = $slotDetails['name'];
+                $time = substr($slot_name, 0, 8);
+
+                $today[] = array(
+                    "booking_id" => (int) $booking_row['id'],
+                    "date" => $today_date,
+                    "day" => "TODAY",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Normal Booking"
+                );
+                $all[] = array(
+                    "booking_id" => (int) $booking_row['id'],
+                    "date" => $today_date,
+                    "day" => "TODAY",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Normal Booking"
+                );
+            } else  if ($date == $tomorrow_date) {
+                //////////////////////////////////////TOMORROW////////////////////////////////////////
+                $user_id = (int) $booking_row['user_id'];
+                $getname = mysqli_query($conn, "SELECT u.name, u.user_address_id, ua.address FROM user u INNER JOIN user_address ua ON u.id = ua.user_id WHERE u.id=$user_id AND ua.id = u.user_address_id LIMIT 1");
+                $customerDetails = mysqli_fetch_assoc($getname);
+
+                $slot_id = (int) $booking_row['slot_id'];
+                $getslot = mysqli_query($conn, "SELECT name FROM slot WHERE id=$slot_id LIMIT 1");
+                $slotDetails = mysqli_fetch_assoc($getslot);
+                $slot_name = $slotDetails['name'];
+                $time = substr($slot_name, 0, 8);
+
+                $tomorrow[] = array(
+                    "booking_id" => (int) $booking_row['id'],
+                    "date" => $tomorrow_date,
+                    "day" => "TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Normal Booking"
+                );
+                $all[] = array(
+                    "booking_id" => (int) $booking_row['id'],
+                    "date" => $tomorrow_date,
+                    "day" => "TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Normal Booking"
+                );
+            } else if ($date == $dayaftertomorrow_date) {
+                //////////////////////////////////////DAy AFTER TOMORROW////////////////////////////////////////
+                $user_id = (int) $booking_row['user_id'];
+                $getname = mysqli_query($conn, "SELECT u.name, u.user_address_id, ua.address FROM user u INNER JOIN user_address ua ON u.id = ua.user_id WHERE u.id=$user_id AND ua.id = u.user_address_id LIMIT 1");
+                $customerDetails = mysqli_fetch_assoc($getname);
+
+                $slot_id = (int) $booking_row['slot_id'];
+                $getslot = mysqli_query($conn, "SELECT name FROM slot WHERE id=$slot_id LIMIT 1");
+                $slotDetails = mysqli_fetch_assoc($getslot);
+                $slot_name = $slotDetails['name'];
+                $time = substr($slot_name, 0, 8);
+
+                $dayaftertomo[] = array(
+                    "booking_id" => (int) $booking_row['id'],
+                    "date" => $dayaftertomorrow_date,
+                    "day" => "DAY AFTER TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Normal Booking"
+                );
+                $all[] = array(
+                    "booking_id" => (int) $booking_row['id'],
+                    "date" => $dayaftertomorrow_date,
+                    "day" => "DAY AFTER TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Normal Booking"
+                );
+            }
+        }
+
+        /////////////////////////////////////////////SERVICE TERM BOOKINGS//////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        while ($booking_row = mysqli_fetch_assoc($q2)) {
+            $booking_id = (int) $booking_row['booking_id'];
+            $date = $booking_row['date'];
+            if ($date == $today_date) {
+                //////////////////////////////////////TODAY////////////////////////////////////////
+                $getuserid = mysqli_query($conn,"SELECT user_id FROM booking WHERE id = $booking_id ");
+                $gg = mysqli_fetch_assoc($getuserid);
+                $user_id = (int) $gg['user_id'];
+                $getname = mysqli_query($conn, "SELECT u.name, u.user_address_id, ua.address FROM user u INNER JOIN user_address ua ON u.id = ua.user_id WHERE u.id=$user_id AND ua.id = u.user_address_id LIMIT 1");
+                $customerDetails = mysqli_fetch_assoc($getname);
+
+                $slot_id = (int) $booking_row['slot_id'];
+                $getslot = mysqli_query($conn, "SELECT name FROM slot WHERE id=$slot_id LIMIT 1");
+                $slotDetails = mysqli_fetch_assoc($getslot);
+                $slot_name = $slotDetails['name'];
+                $time = substr($slot_name, 0, 8);
+
+                $today[] = array(
+                    "booking_id" => $booking_id,
+                    "visit_id"=>(int) $booking_row['id'],
+                    "date" => $today_date,
+                    "day" => "TODAY",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Service Term Booking (From Type 2A and 2B)"
+                );
+                $all[] = array(
+                    "booking_id" => $booking_id,
+                    "visit_id" => (int) $booking_row['id'],
+                    "date" => $today_date,
+                    "day" => "TODAY",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Service Term Booking (From Type 2A and 2B)"
+                );
+            } else  if ($date == $tomorrow_date) {
+                //////////////////////////////////////TOMORROW////////////////////////////////////////
+                $getuserid = mysqli_query($conn, "SELECT user_id FROM booking WHERE id = $booking_id ");
+                $gg = mysqli_fetch_assoc($getuserid);
+                $user_id = (int) $gg['user_id'];
+                $getname = mysqli_query($conn, "SELECT u.name, u.user_address_id, ua.address FROM user u INNER JOIN user_address ua ON u.id = ua.user_id WHERE u.id=$user_id AND ua.id = u.user_address_id LIMIT 1");
+                $customerDetails = mysqli_fetch_assoc($getname);
+
+                $slot_id = (int) $booking_row['slot_id'];
+                $getslot = mysqli_query($conn, "SELECT name FROM slot WHERE id=$slot_id LIMIT 1");
+                $slotDetails = mysqli_fetch_assoc($getslot);
+                $slot_name = $slotDetails['name'];
+                $time = substr($slot_name, 0, 8);
+
+                $tomorrow[] = array(
+                    "booking_id" => $booking_id,
+                    "visit_id" => (int) $booking_row['id'],
+                    "date" => $tomorrow_date,
+                    "day" => "TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Service Term Booking (From Type 2A and 2B)"
+                );
+                $all[] = array(
+                    "booking_id" => $booking_id,
+                    "visit_id" => (int) $booking_row['id'],
+                    "date" => $tomorrow_date,
+                    "day" => "TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Service Term Booking (From Type 2A and 2B)"
+                );
+            } else if ($date == $dayaftertomorrow_date) {
+                //////////////////////////////////////DAy AFTER TOMORROW////////////////////////////////////////
+                $getuserid = mysqli_query($conn, "SELECT user_id FROM booking WHERE id = $booking_id ");
+                $gg = mysqli_fetch_assoc($getuserid);
+                $user_id = (int) $gg['user_id'];
+                $getname = mysqli_query($conn, "SELECT u.name, u.user_address_id, ua.address FROM user u INNER JOIN user_address ua ON u.id = ua.user_id WHERE u.id=$user_id AND ua.id = u.user_address_id LIMIT 1");
+                $customerDetails = mysqli_fetch_assoc($getname);
+
+                $slot_id = (int) $booking_row['slot_id'];
+                $getslot = mysqli_query($conn, "SELECT name FROM slot WHERE id=$slot_id LIMIT 1");
+                $slotDetails = mysqli_fetch_assoc($getslot);
+                $slot_name = $slotDetails['name'];
+                $time = substr($slot_name, 0, 8);
+
+                $dayaftertomo[] = array(
+                    "booking_id" => $booking_id,
+                    "visit_id" => (int) $booking_row['id'],
+                    "date" => $dayaftertomorrow_date,
+                    "day" => "DAY AFTER TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Service Term Booking (From Type 2A and 2B)"
+                );
+                $all[] = array(
+                    "booking_id" => $booking_id,
+                    "visit_id" => (int) $booking_row['id'],
+                    "date" => $dayaftertomorrow_date,
+                    "day" => "DAY AFTER TOMORROW",
+                    "servicer_status" => $booking_row['servicer_status'],
+                    "credits" => (int) $booking_row['credits'],
+                    "customerName" => $customerDetails['name'],
+                    "customerAddress" => $customerDetails['address'],
+                    "time" => $time,
+                    "booking_type" => "Service Term Booking (From Type 2A and 2B)"
+                );
+            }
+        }
+    }
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Ongoing details for the employee : 1",
+        "all" => $all,
+        "today" => $today,
+        "tomorrow" => $tomorrow,
+        "dayAfterTomorrow" => $dayaftertomo
+    );
+    echo json_encode($response);
+    die();
+}
+
+function viewEmployeeCalendarLeaves(){
+    $conn = $GLOBALS['conn'];
+
+        if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    date_default_timezone_set('Asia/Calcutta');
+    $today_date =  date('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+1 day');
+    $tomorrow_date =  $datetime->format('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+2 day');
+    $dayaftertomorrow_date =  $datetime->format('Y-m-d');
+
+    $q1 = mysqli_query($conn,"SELECT a.*, s.name FROM available_slot a INNER JOIN slot s ON a.slot_id =s.id WHERE a.emp_id = $emp_id AND a.available = 'NO' AND a.date IN ('$today_date','$tomorrow_date','$dayaftertomorrow_date') ORDER BY a.slot_id");
+    if(mysqli_num_rows($q1)==0){
+        $errorData["data"] = array("status" => 0,   "message" => "No details available for current 3 days for this employee");
+        echo json_encode($errorData);
+        die();
+    }
+
+    while($row = mysqli_fetch_assoc($q1)){
+        $date = $row['date'];
+        if($date==$today_date){
+            $today[] = array(
+                "date"=> $today_date,
+                "available"=>"NO",
+                "time"=> $row['name']
+            );
+        }
+        else if($date == $tomorrow_date){
+            $tomorrow[] = array(
+                "date" => $tomorrow_date,
+                "available" => "NO",
+                "time" => $row['name']
+            );
+        }
+        else if($date == $dayaftertomorrow_date){
+            $dayaftertomorrow[] = array(
+                "date" => $dayaftertomorrow_date,
+                "available" => "NO",
+                "time" => $row['name']
+            );
+        }
+    }
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Calendar details for the employee : 1",
+        "today" => $today==NULL?array(): $today,
+        "tomorrow" => $tomorrow == NULL ? array() : $tomorrow,
+        "dayAfterTomorrow" => $dayaftertomorrow == NULL ? array() : $dayaftertomorrow
+    );
+    echo json_encode($response);
+    die();
+}
+
+function viewEmployeeCalendar(){
+    $conn = $GLOBALS['conn'];
+
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    date_default_timezone_set('Asia/Calcutta');
+    $today_date =  date('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+1 day');
+    $tomorrow_date =  $datetime->format('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+2 day');
+    $dayaftertomorrow_date =  $datetime->format('Y-m-d');
+
+
+    if (!isset($_GET['date'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['date'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No date is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $date = $_GET['date'];
+    
+    if(($date != $today_date)){
+        if($date != $tomorrow_date){
+            if($date != $dayaftertomorrow_date){
+                $errorData["data"] = array("status" => 0,   "message" => "Invalid date; Only current 3 dates are accepted");
+                echo json_encode($errorData);
+                die();
+            }
+        }
+    }
+
+    $q1 = mysqli_query($conn, "SELECT a.available, s.id, s.name, s.period FROM available_slot a INNER JOIN slot s ON a.slot_id =s.id WHERE a.emp_id = $emp_id AND a.date = '$date' ORDER BY a.slot_id");
+   
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details available for given date for this employee");
+        echo json_encode($errorData);
+        die();
+    }
+
+    while($row = mysqli_fetch_assoc($q1)){
+        $slots[] = array(
+            "slot_id"=>(int)$row['id'],
+            "available" => $row['available'],
+            "period" => $row['period'],
+            "time"=> $row['name']
+        );
+    }   
+    $response['data'] = array(
+        "status"=> 1,
+       "message"=> "Calendar details for the employee : 1",
+       "date"=> $date,
+       "slots" => $slots==NULL?array() : $slots
+    );
+    echo json_encode($response);
+    die();
+}
+
+function banks(){
+    $conn = $GLOBALS['conn'];
+    $q1 = mysqli_query($conn,"SELECT * FROM banks ORDER BY name ASC");
+    if(mysqli_num_rows($q1)==0){
+        $errorData["data"] = array("status" => 0,   "message" => "No banks available");
+        echo json_encode($errorData);
+        die();
+    }
+
+    while($row = mysqli_fetch_assoc($q1))   {
+        $banks[] = array(
+            "bankId"=> (int) $row['id'],
+            "bankName"=> $row['name']
+        );
+    }
+    $response['data'] = array(
+        "status"=> 1,
+       "message"=> "Banks List",
+       "banks"=>$banks
+    );
+    echo json_encode($response);
+    die();
+}
+
+function employeeAccountDetails(){
+    $conn = $GLOBALS['conn'];
+
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    $q1 = mysqli_query($conn, "SELECT pan_number, bank_account_number, gst_number FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No banks available");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $row = mysqli_fetch_assoc($q1);
+    
+    $response['data'] = array(
+        "status"=> 1,
+       "message"=> "Account details",
+       "emp_id"=> $emp_id,
+       "pan_number"=> $row['pan_number'],
+       "bank_account_number"=> $row['bank_account_number'],
+       "gst_number"=> $row['gst_number']
+    );
+    echo json_encode($response);
+    die();
+}
+
+function employeeViewBankDetails(){
+    $conn = $GLOBALS['conn'];
+
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+    $row = mysqli_fetch_assoc($q1);
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details available");
+        echo json_encode($errorData);
+        die();
+    }
+    $bank_id = (int) $row['bank_id'];
+    $q2 = mysqli_query($conn, "SELECT name FROM banks WHERE id = $bank_id LIMIT 1");
+    $row2 = mysqli_fetch_assoc($q2);
+    $bank_name = $row2['name'];
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Bank details",
+        "emp_id" => $emp_id,
+       "bank_id"=>(int)$row['bank_id'],
+       "bank_name"=> $bank_name==NULL?'': $bank_name,
+       "ifsc"=> $row['ifsc']==NULL?'': $row['ifsc'],
+       "account_name"=> $row['bank_name']==NULL?: $row['bank_name'],
+       "bank_account_number"=> $row['bank_account_number']==NULL?'': $row['bank_account_number'],
+       "cheque_url"=> $row['cheque_url']==NULL?'': $row['cheque_url'],
+
+    );
+    echo json_encode($response);
+    die();
+
+}
+
+function employeeViewPAN(){
+    $conn = $GLOBALS['conn'];
+
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+    $row = mysqli_fetch_assoc($q1);
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details available");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+    $row = mysqli_fetch_assoc($q1);
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details available");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "PAN details",
+        "emp_id" => $emp_id,
+        "pan_name" => $row['pan_name'] == NULL ? '' : $row['pan_name'],
+        "pan_number" => $row['pan_number'] == NULL ? '' : $row['pan_number'],
+        "pan_front_url" => $row['pan_front_url'] == NULL ? '' : $row['pan_front_url'],
+
+    );
+    echo json_encode($response);
+    die();
+
+}
+
+function employeeViewGST(){
+    $conn = $GLOBALS['conn'];
+
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+    $row = mysqli_fetch_assoc($q1);
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details available");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+    $row = mysqli_fetch_assoc($q1);
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details available");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "GST details",
+        "emp_id" => $emp_id,
+        "gst_name" => $row['gst_name'] == NULL ? '' : $row['gst_name'],
+        "gst_number" => $row['gst_number'] == NULL ? '' : $row['gst_number']
+
+    );
+    echo json_encode($response);
+    die();
+
+}
+
+function employeeUpdateBankDetails(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+
+    if (!isset($_POST['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_POST['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_POST['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+
+    ///////////////////////////////
+
+    $types1 = array('image/jpeg', 'image/jpg', 'image/png');
+
+    if (!in_array($_FILES['cheque_url']['type'], $types1)) {
+            $response["data"] = array("status"=>0,"message"=>"JPG, JPEG, PNG formats alone accepted");
+            echo json_encode($response);
+            die();
+    }
+
+    //Uploading Images
+    date_default_timezone_set('Asia/Calcutta');
+    $datetime = date('dmY_hisA_');
+    //image upload
+    $file_name = "img_" . $datetime . ".jpg";
+    $file_path = "images/" . $file_name;
+
+    if ($_FILES["cheque_url"]["name"]) {
+        $info = pathinfo($_FILES['cheque_url']['name']);
+        move_uploaded_file($_FILES['cheque_url']['tmp_name'], $file_path);
+
+        $server_name = "https://" . $_SERVER['SERVER_NAME'];
+        $folder_name = dirname($_SERVER['PHP_SELF']) . "/images/";
+        $cheque_url = $server_name . $folder_name . $file_name;
+    }
+    else {
+        $cheque_url = '';
+    }   
+    
+    ////////////////////////////
+    $bank_id = (int)$_POST['bank_id'];
+
+    $bankcheck = mysqli_query($conn, "SELECT name from banks WHERE id = $bank_id");
+    if (mysqli_num_rows($bankcheck) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Invalid bank_id");
+        echo json_encode($errorData);
+        die();
+    }
+    $bankrowname = mysqli_fetch_assoc($bankcheck);
+    $bank_name = $bankrowname['name'];
+
+    $account_name =  $_POST['account_name'];
+    $bank_account_number =  $_POST['bank_account_number'];
+    $ifsc = $_POST['ifsc'];
+    $emp_id =  $_POST['emp_id'];
+
+
+    if (mysqli_num_rows($q1) == 0) {
+        $q1 = mysqli_query($conn,"INSERT INTO employee_account_details(cheque_url, bank_id, bank_name, bank_account_number, ifsc, emp_id)
+                                    VALUES ('$cheque_url', $bank_id, '$account_name', '$bank_account_number', '$ifsc', $emp_id)");
+        if($q1){
+            $response['data'] = array(
+                "status"=> 1,
+                "message"=> "Bank details updated",
+                "emp_id"=> $emp_id,
+                "bank_id"=> $bank_id,
+                "bank_name"=> $bank_name,
+                "ifsc"=> $ifsc,
+                "account_name"=> $account_name,
+                "bank_account_number"=> $bank_account_number,
+                "cheque_url"=> $cheque_url
+            );
+            echo json_encode($response);
+            die();
+        }
+    }
+    else {
+        $q1 = mysqli_query($conn, "UPDATE employee_account_details SET cheque_url = '$cheque_url',
+                                                                        bank_id = $bank_id,
+                                                                        bank_name = '$account_name',
+                                                                        bank_account_number = '$bank_account_number',
+                                                                        ifsc = '$ifsc'
+                                                                        WHERE emp_id = $emp_id ");
+        if ($q1) {
+            $response['data'] = array(
+                "status" => 1,
+                "message" => "Bank details updated",
+                "emp_id" => $emp_id,
+                "bank_id" => $bank_id,
+                "bank_name" => $bank_name,
+                "ifsc" => $ifsc,
+                "account_name" => $account_name,
+                "bank_account_number" => $bank_account_number,
+                "cheque_url" => $cheque_url
+            );
+            echo json_encode($response);
+            die();
+        }
+    }
+}
+
+function employeeUpdatePAN()
+{
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_POST['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_POST['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_POST['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+
+    ///////////////////////////////
+
+    $types1 = array('image/jpeg', 'image/jpg', 'image/png');
+
+    if (!in_array($_FILES['pan_front_url']['type'], $types1)) {
+        $response["data"] = array("status" => 0, "message" => "JPG, JPEG, PNG formats alone accepted");
+        echo json_encode($response);
+        die();
+    }
+
+    //Uploading Images
+    date_default_timezone_set('Asia/Calcutta');
+    $datetime = date('dmY_hisA_');
+    //image upload
+    $file_name = "img_" . $datetime . ".jpg";
+    $file_path = "images/" . $file_name;
+
+    if ($_FILES["pan_front_url"]["name"]) {
+        $info = pathinfo($_FILES['pan_front_url']['name']);
+        move_uploaded_file($_FILES['pan_front_url']['tmp_name'], $file_path);
+
+        $server_name = "https://" . $_SERVER['SERVER_NAME'];
+        $folder_name = dirname($_SERVER['PHP_SELF']) . "/images/";
+        $pan_front_url = $server_name . $folder_name . $file_name;
+    } else {
+        $pan_front_url = '';
+    }
+
+    ////////////////////////////
+    $pan_name =  $_POST['pan_name'];
+    $pan_number =  $_POST['pan_number'];
+   
+    if (mysqli_num_rows($q1) == 0) {
+        $q1 = mysqli_query($conn, "INSERT INTO employee_account_details(pan_front_url, pan_name, pan_number, emp_id)
+                                    VALUES ('$pan_front_url','$pan_name', '$pan_number', $emp_id)");
+        if ($q1) {
+            $response['data'] = array(
+                "status" => 1,
+                "message" => "PAN details updated",
+                "emp_id" => $emp_id,
+                "pan_name" => $pan_name,
+                "pan_number" => $pan_number,
+                "pan_front_url" => $pan_front_url
+            );
+            echo json_encode($response);
+            die();
+        }
+    } else {
+        $q1 = mysqli_query($conn, "UPDATE employee_account_details SET pan_front_url = '$pan_front_url',
+                                                                        pan_name = '$pan_name',
+                                                                        pan_number = '$pan_number'
+                                                                        WHERE emp_id = $emp_id ");
+        if ($q1) {
+            $response['data'] = array(
+                "status" => 1,
+                "message" => "PAN details updated",
+                "emp_id" => $emp_id,
+                "pan_name" => $pan_name,
+                "pan_number" => $pan_number,
+                "pan_front_url" => $pan_front_url
+            );
+            echo json_encode($response);
+            die();
+        }
+    }
+}
+
+function employeeUpdateGST(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $input['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+
+    $q1 = mysqli_query($conn, "SELECT * FROM employee_account_details WHERE emp_id = $emp_id LIMIT 1");
+
+    ///////////////////////////////
+
+    $gst_name =  $input['gst_name'];
+    $gst_number =  $input['gst_number'];
+
+    if (mysqli_num_rows($q1) == 0) {
+        $q1 = mysqli_query($conn, "INSERT INTO employee_account_details(gst_name, gst_number, emp_id)
+                                    VALUES ('$gst_name', '$gst_number', $emp_id)");
+        if ($q1) {
+            $response['data'] = array(
+                "status" => 1,
+                "message" => "GST details updated",
+                "emp_id" => $emp_id,
+                "gst_name" => $gst_name,
+                "gst_number" => $gst_number
+            );
+            echo json_encode($response);
+            die();
+        }
+    } else {
+        $q1 = mysqli_query($conn, "UPDATE employee_account_details SET gst_name = '$gst_name',
+                                                                        gst_number = '$gst_number'
+                                                                        WHERE emp_id = $emp_id ");
+        if ($q1) {
+            $response['data'] = array(
+                "status" => 1,
+                "message" => "GST details updated",
+                "emp_id" => $emp_id,
+                "gst_name" => $gst_name,
+                "gst_number" => $gst_number
+            );
+            echo json_encode($response);
+            die();
+        }
+    }
+}
+
+function servicerUpdateLeave(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $input['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    date_default_timezone_set('Asia/Calcutta');
+    $today_date =  date('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+1 day');
+    $tomorrow_date =  $datetime->format('Y-m-d');
+
+    $datetime = new DateTime(date('Y-m-d'));
+    $datetime->modify('+2 day');
+    $dayaftertomorrow_date =  $datetime->format('Y-m-d');
+
+    $date = $input['date'];
+
+    if (($date != $today_date)) {
+        if ($date != $tomorrow_date) {
+            if ($date != $dayaftertomorrow_date) {
+                $errorData["data"] = array("status" => 0,   "message" => "Invalid date; Only current 3 dates are accepted");
+                echo json_encode($errorData);
+                die();
+            }
+        }
+    }
+
+
+    if (!isset($input['yes'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No yes is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['yes'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No yes is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $yes_input = trim($input['yes']);
+    $yes_arr = explode(",", $yes_input);
+
+    if(count($yes_arr) != count(array_unique($yes_arr))){
+        $errorData["data"] = array("status" => 0,   "message" => "yes - has duplicate values");
+        echo json_encode($errorData);
+        die();
+    }
+
+    if (!isset($input['no'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No no is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['no'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No no is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    $no_input = trim($input['no']);
+    $no_arr = explode(",", $no_input);
+    if (count($no_arr) != count(array_unique($no_arr))) {
+        $errorData["data"] = array("status" => 0,   "message" => "no - has duplicate values");
+        echo json_encode($errorData);
+        die();
+    }
+
+    foreach ($yes_arr as $num) {
+        if (in_array($num, $no_arr)) {
+            $errorData["data"] = array("status" => 0,   "message" => "yes and no - has duplicate values");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+
+    foreach ($no_arr as $num) {
+        if (in_array($num, $yes_arr)) {
+            $errorData["data"] = array("status" => 0,   "message" => "yes and no - has duplicate values");
+            echo json_encode($errorData);
+            die();
+        }
+    }
+
+    $total_slot_count = count($yes_arr)+ count($no_arr);
+
+    $slotchecks = mysqli_query($conn, "SELECT COUNT(id) AS count FROM slot");
+    $zzz = mysqli_fetch_assoc($slotchecks);
+    $actual_count = (int)$zzz['count'];
+
+    if($total_slot_count != $actual_count){
+        $errorData["data"] = array("status" => 0,   "message" => "Total number of slots count should be : $actual_count");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $getzone = mysqli_query($conn, "SELECT zone_id FROM employee WHERE id = $emp_id");
+    if (mysqli_num_rows($getzone) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee has no zone_id selected; So could not update slot details");
+        echo json_encode($errorData);
+        die();
+    }
+
+    $abc = mysqli_fetch_assoc($getzone);
+    $zone_id = (int)$abc['zone_id'];
+    $i=0;
+    $params = '';
+    while($i< count($yes_arr)){
+        $params .= "(".$emp_id.",".$zone_id.",'".$date."',".$yes_arr[$i].",'YES'),";
+        $i++;
+    }
+    $i = 0;
+    while ($i < count($no_arr)) {
+        $params .= "(" . $emp_id . "," . $zone_id . ",'" . $date . "'," . $no_arr[$i] . ",'NO'),";
+        $i++;
+    }
+    $params = rtrim($params, ',');
+
+    $del = mysqli_query($conn, "DELETE FROM available_slot WHERE emp_id = $emp_id AND date = '$date' ");
+    
+    $insert = mysqli_query($conn, "INSERT INTO available_slot(emp_id, zone_id, date, slot_id, available) VALUES $params");
+    if($insert){
+        $errorData["data"] = array("status" => 1,   "message" => "available slots updated for employee ID: $emp_id for date : $date ");
+        echo json_encode($errorData);
+        die();
+    }
+    else{
+        $errorData["data"] = array("status" => 0,   "message" => "internal server error");
+        echo json_encode($errorData);
+        die();
+    }
+}
