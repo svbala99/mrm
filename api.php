@@ -19,7 +19,9 @@ function checkReqMethod()
     }
 }
 
-$production = false;
+$production = true;
+
+
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -27,9 +29,9 @@ $database = "mrm";
 
 if ($production) {
     $servername = "localhost";
-    $username = "xplor4br_mrm";
-    $password = "K{NC8io_~lV8";
-    $database = "xplor4br_mrm";
+    $username = "gfnart_mrm_new";
+    $password = "8765432187654321";
+    $database = "gfnart_mrm";
 }
 
 $conn = new mysqli($servername, $username, $password, $database);
@@ -3299,7 +3301,8 @@ function addToCartCount()
 
         die();
     }
-
+     $user_id = (int) $input['user_id'];
+validateUserId($conn, $user_id);
     if (!isset($input['type'])) {
         $errorData["data"] = array("status" => 0,   "message" => "No type is supplied");
         echo json_encode($errorData);
@@ -3313,7 +3316,7 @@ function addToCartCount()
     }
 
 
-    $user_id = (int) $input['user_id'];
+   
     $type = $input['type'];
     //CHECK FOR BLOCKED CUSTOMER
     $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
@@ -3724,14 +3727,7 @@ function addToCartCount()
         ////////////////////////////////////////////////////////////////HOME TYPE 2B//////////////////////////////////////////////////////////////
 
 
-        if (!isset($input['choose'])) {
-            $errorData["data"] = array("status" => 0,   "message" => "No choose is supplied");
-            echo json_encode($errorData);
-            die();
-        }
-        $main_category_id_chosen = (int) $input['choose'];
-
-
+        
         if (!isset($input['tariff_id'])) {
             $errorData["data"] = array("status" => 0,   "message" => "No tariff_id is supplied");
             echo json_encode($errorData);
@@ -4280,6 +4276,8 @@ function deleteCustomerAddress()
 
     $check = mysqli_query($conn, "DELETE FROM user_address WHERE id = $address_id AND user_id = $user_id");
 
+
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id'");
     $abc = mysqli_fetch_assoc($checkk);
     $user_address_id = (int) $abc['user_address_id'];
     $checkaddress = mysqli_query($conn, "SELECT * FROM user_address WHERE user_id = $user_id");
@@ -4316,7 +4314,9 @@ function deleteCustomerAddress()
             echo json_encode($errorData);
             die();
         }
-    } else {
+    }
+    
+    else {
         $errorData["data"] = array("status" => 2,   "message" => "address_id deleted successfully", "address" => array());
         echo json_encode($errorData);
         die();
@@ -5192,9 +5192,8 @@ function getHelp()
         echo json_encode($response);
         die();
     } else {
-        $errorData["error"] = array("status" => 0, "code" => 400, "message" => "Category not found", "error" => mysqli_error($conn));
+        $errorData["data"] = array("status" => 0, "message" => "Category not found", "error" => mysqli_error($conn));
         echo json_encode($errorData);
-        header("HTTP/1.1 400");
         die();
     }
 }
@@ -5400,9 +5399,8 @@ function cartSummary()
     }
     //
     else {
-        $errorData["error"] = array("status" => 0, "code" => 404, "message" => "No items in the cart for this user.");
+        $errorData["data"] = array("status" => 0,"message" => "No items in the cart for this user.");
         echo json_encode($errorData);
-        header("HTTP/1.1 404");
         die(mysqli_error($conn));
     }
 }
@@ -5715,7 +5713,7 @@ function customerBookNow()
         $ch = mysqli_fetch_assoc($tt);
         $startNew = $ch['start'];
         $minutesLeftNew = strtotime($startNew) - strtotime($timenow);
-        if ($minutesLeftNew < 0) {
+        if ($date==$today && $minutesLeftNew < 0) {
             $errorData["data"] = array("status" => 0,   "message" => "Given date is today but time is in past. Invalid input");
             echo json_encode($errorData);
             die();
@@ -6067,7 +6065,7 @@ function viewCustomerBooking()
     $mc_name = $main_cat_name['name'];
 
 
-    $employeeDetails[] = array("name" => $employeerow['name'], "country_code" => $employeerow['country_code'], "cell" => $employeerow['cell'], "main_category" => $mc_name, "ratings" => $employeerow['rating']);
+    $employeeDetails = array("name" => $employeerow['name'], "country_code" => $employeerow['country_code'], "cell" => $employeerow['cell'], "main_category" => $mc_name, "ratings" => $employeerow['rating']==NULL?'':$employeerow['rating']);
 
     $rescheduled_count = (int) $bookingdetails['rescheduled_count'];
     $booking_status =  $bookingdetails['status'];
@@ -6093,7 +6091,7 @@ function viewCustomerBooking()
     $q5 = mysqli_query($conn, "SELECT * FROM user_address WHERE id = $user_address_id");
     $addressDetails = mysqli_fetch_assoc($q5);
 
-    $user_address_details[] = array("location" => $addressDetails['location'], "address" => $addressDetails['address'], "latitude" => $addressDetails['latitude'], "longitude" => $addressDetails['longitude'], "zone_id" => (int) $addressDetails['zone_id']);
+    $user_address_details = array("location" => $addressDetails['location'], "address" => $addressDetails['address'], "latitude" => $addressDetails['latitude'], "longitude" => $addressDetails['longitude'], "zone_id" => (int) $addressDetails['zone_id']);
 
     $slot_id =  (int) $bookingdetails['slot_id'];
     $q6 = mysqli_query($conn, "SELECT name FROM slot WHERE id = $slot_id");
@@ -6127,7 +6125,7 @@ function viewCustomerBooking()
         "servicer_status" => $servicer_status,
         "payment_type" => $payment_type,
         "payment" => $payment,
-        "booking_date" => (int) $booking_date,
+        "booking_date" =>  $booking_date,
         "estimate" => (int) $estimate,
         "tax_percent" => (int) $tax_percent,
         "tax_amount" => (int) $tax_amount,
@@ -6206,7 +6204,7 @@ function viewCustomerBookings()
                                     FROM booking_item_23 bi23 INNER JOIN main_categories mc ON bi23.main_category_id = mc.id WHERE bi23.booking_id= $booking_id");
         $subscripdetails = mysqli_fetch_assoc($qq);
 
-        $checkavailable = mysqli_query($conn, "SELECT COUNT(id) AS services_available FROM `booking_item_23` WHERE `booking_id` = $booking_id AND payment IS NULL");
+        $checkavailable = mysqli_query($conn, "SELECT COUNT(id) AS services_available FROM `booking_item_23` WHERE `booking_id` = $booking_id AND status IS NULL AND payment IS NULL");
         $aa = mysqli_fetch_assoc($checkavailable);
 
 
@@ -6614,7 +6612,7 @@ function customerViewSubscription()
                                     ON rv.main_category_id = bi.`main_category_id`
                                     INNER JOIN booking bb 
                                     ON bb.id = bi.`booking_id`
-                                    WHERE bi.`booking_id`= 291019003
+                                    WHERE bi.`booking_id`= $booking_id
                                     GROUP BY bi.`id`
                                     LIMIT 1");
     $row2 = mysqli_fetch_assoc($q2);
@@ -8218,4 +8216,57 @@ function servicerUpdateLeave(){
         echo json_encode($errorData);
         die();
     }
+}
+
+
+function employeeJobHistory(){
+    $conn = $GLOBALS['conn'];
+    if (!isset($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['emp_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No emp_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    $emp_id = (int) $_GET['emp_id'];
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM employee WHERE id='$emp_id' AND account_status = 'BLOCKED' ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This employee Account is Blocked");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    checkEmployeeId($conn, $emp_id);
+
+    $q1 = mysqli_query($conn, "SELECT b.id, b.status, b.user_address_id, ua.address, u.id, u.name FROM `booking` b
+                                    INNER JOIN user u  ON u.id = b.user_id
+                                    INNER JOIN user_address ua ON ua.id = b.user_address_id
+                                    WHERE emp_id=$emp_id");
+    if (mysqli_num_rows($q1) == 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No data found");
+        echo json_encode($errorData);
+        die();
+    }    
+    while($row = mysqli_fetch_assoc($q1)){
+        $jobHistory[] = array(
+                "bookingId"=>(int)$row['id'],
+                "booking_status"=>$row['status'],
+                "customer_name"=>$row['name'],
+                "customer_address"=>$row['address']
+            );
+    }
+    
+    $response['data'] = array("status"=>1, "message"=>"Job hostory for emp_id : $emp_id", "job_history"=>$jobHistory);
+    echo json_encode($response);
+    die();
+    
+
+
 }
