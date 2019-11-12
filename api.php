@@ -8245,28 +8245,242 @@ function employeeJobHistory(){
     //END oF BLOCKED
     checkEmployeeId($conn, $emp_id);
 
-    $q1 = mysqli_query($conn, "SELECT b.id, b.status, b.user_address_id, ua.address, u.id, u.name FROM `booking` b
+    $q1 = mysqli_query($conn, "SELECT b.id  as booking_id, b.status, b.payment_type, b.user_address_id, ua.address, u.id, u.name FROM `booking` b
                                     INNER JOIN user u  ON u.id = b.user_id
                                     INNER JOIN user_address ua ON ua.id = b.user_address_id
                                     WHERE emp_id=$emp_id");
     if (mysqli_num_rows($q1) == 0) {
-        $errorData["data"] = array("status" => 0,   "message" => "No data found");
-        echo json_encode($errorData);
-        die();
+        $jobHistory1 = array();
     }    
     while($row = mysqli_fetch_assoc($q1)){
-        $jobHistory[] = array(
-                "bookingId"=>(int)$row['id'],
+        $jobHistory1[] = array(
+                "type"=>"Normal Booking",
+                "bookingId"=>(int)$row['booking_id'],
                 "booking_status"=>$row['status'],
                 "customer_name"=>$row['name'],
-                "customer_address"=>$row['address']
+                "customer_address"=>$row['address'],
+                "payment_type"=>$row['payment_type']==NULL?'':$row['payment_type']
             );
     }
     
-    $response['data'] = array("status"=>1, "message"=>"Job hostory for emp_id : $emp_id", "job_history"=>$jobHistory);
+    $q2 = mysqli_query($conn, "SELECT b.id as visit_id, bb.id as booking_id, b.status, ua.address, u.name FROM `booking_item_23` b
+									INNER JOIN booking bb ON b.booking_id = bb.id
+                                    INNER JOIN user u  ON u.id = bb.user_id
+                                    INNER JOIN user_address ua ON ua.id = b.user_address_id
+                                    WHERE b.emp_id=$emp_id");
+                                    
+    if (mysqli_num_rows($q2)==0) {
+        $jobHistory2 = array();
+    }    
+    while($row2 = mysqli_fetch_assoc($q2)){
+        $jobHistory2[] = array(
+                "type"=>"Service Term Booking",
+                "bookingId"=>(int)$row2['booking_id'],
+                "visit_id"=>(int)$row2['visit_id'],
+                "booking_status"=>$row2['status'],
+                "customer_name"=>$row2['name'],
+                "customer_address"=>$row2['address'],
+                "payment_type"=>$row['payment_type']==NULL?'':$row['payment_type']
+            );
+    }
+    
+    $response['data'] = array("status"=>1, "message"=>"Job history for emp_id : $emp_id", "job_history"=>array("normal_booking"=>$jobHistory1, "service_term_booking"=>$jobHistory2));
     echo json_encode($response);
     die();
     
 
 
+}
+
+
+function servicerViewBooking(){
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($_GET['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $booking_id = (int) $_GET['booking_id'];
+
+    $q1 = mysqli_query($conn, "SELECT * FROM booking WHERE id = $booking_id LIMIT 1");
+    if (mysqli_num_rows($q1)==0) {
+        $errorData["data"] = array("status" => 0,   "message" => "No details found");
+        echo json_encode($errorData);
+        die();
+    }
+    $bookingdetails = mysqli_fetch_assoc($q1);
+    $otp = (int) $bookingdetails['otp'];
+    
+    $rescheduled_count = (int) $bookingdetails['rescheduled_count'];
+    $servicer_reschedule_count = (int) $bookingdetails['servicer_reschedule_count'];
+    $booking_status =  $bookingdetails['status'];
+    $servicer_status =  $bookingdetails['servicer_status'];
+    $servicer_comment =  $bookingdetails['servicer_comment'];
+    $payment_type =  $bookingdetails['payment_type'];
+    $payment =  $bookingdetails['payment'];
+    $booking_date =  $bookingdetails['date'];
+    $estimate =  (int) $bookingdetails['estimate'];
+    $tax_percent =  (int) $bookingdetails['tax_percent'];
+    $tax_amount =  (int) $bookingdetails['tax_amount'];
+    $total =  (int) $bookingdetails['total'];
+    $coupon =   $bookingdetails['coupon'];
+
+    $q4 = mysqli_query($conn, "SELECT description FROM coupon WHERE code = '$coupon' ");
+    $coupondesc = mysqli_fetch_assoc($q4);
+    $coupon_description =   $coupondesc['description'];
+
+    $coupon_reduce =  (int) $bookingdetails['coupon_reduce'];
+    $wallet_reduce =  (int) $bookingdetails['wallet_reduce'];
+    $amount_payable =  (int) $bookingdetails['amount_payable'];
+
+    $user_id = (int) $bookingdetails['user_id'];
+    $namecheck = mysqli_query($conn,"SELECT name FROM user WHERE id = $user_id");
+    $thiss = mysqli_fetch_assoc($namecheck);
+    $customer_name = $thiss['name'];
+    $user_address_id =  (int) $bookingdetails['user_address_id'];
+    $q5 = mysqli_query($conn, "SELECT * FROM user_address WHERE id = $user_address_id");
+    $addressDetails = mysqli_fetch_assoc($q5);
+
+    $user_address_details = array("location" => $addressDetails['location'], "address" => $addressDetails['address'], "latitude" => $addressDetails['latitude'], "longitude" => $addressDetails['longitude'], "zone_id" => (int) $addressDetails['zone_id']);
+
+    $slot_id =  (int) $bookingdetails['slot_id'];
+    $q6 = mysqli_query($conn, "SELECT name FROM slot WHERE id = $slot_id");
+    $slotname = mysqli_fetch_assoc($q6);
+    $slot = $slotname['name'];
+
+    $updated = $bookingdetails['updated'];
+
+    $q7 = mysqli_query($conn, "SELECT bi.*, product_title, product_description, mc.name FROM booking_item bi INNER JOIN products p ON bi.product_id = p.id INNER JOIN main_categories mc ON p.category_id = mc.id WHERE booking_id = $booking_id");;
+    while ($bookingItem = mysqli_fetch_assoc($q7)) {
+        $bookingItemsArray[] = array(
+            "bookingItemId" => (int) $bookingItem['id'],
+            "productId" => (int) $bookingItem['product_id'],
+            "productTitle" =>  $bookingItem['product_title'],
+            "productDescription" =>  $bookingItem['product_description'],
+            "mainCategoryName" => $bookingItem['name'],
+            "count" => (int) $bookingItem['count'],
+            "price" => (int) $bookingItem['price']
+        );
+    }
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Booking Detail",
+        "otp" => (int) $otp,
+        "booking_id" => (int) $booking_id,
+        "rescheduled_count" => (int) $rescheduled_count,
+        "servicer_reschedule_count" => (int) $servicer_reschedule_count,
+        "booking_status" => $booking_status,
+        "servicer_status" => $servicer_status,
+        "servicer_comment" => $servicer_comment,
+        "payment_type" => $payment_type,
+        "payment" => $payment,
+        "booking_date" =>  $booking_date,
+        "estimate" => (int) $estimate,
+        "tax_percent" => (int) $tax_percent,
+        "tax_amount" => (int) $tax_amount,
+        "total" => (int) $total,
+        "coupon" => $coupon,
+        "coupon_description" => $coupon_description,
+        "coupon_reduce" => (int) $coupon_reduce,
+        "wallet_reduce" => (int) $wallet_reduce,
+        "amount_payable" => (int) $amount_payable,
+        "customer_name"=>$customer_name,
+        "customer_address_details" => $user_address_details,
+        "slot" => $slot,
+        "updated" => $updated,
+        "booking_items" => $bookingItemsArray
+    );
+    echo json_encode($response);
+    die();
+}
+
+
+function servicerViewSingleTerm(){
+    
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    
+    if (!isset($_GET['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($_GET['visit_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No visit_id is supplied");
+        echo json_encode($errorData);
+        die();
+    }
+    $visit_id = (int) $_GET['visit_id'];
+    
+
+    $q1 = mysqli_query($conn, "SELECT mc.name,
+                (SELECT name FROM main_categories mcc WHERE mcc.id = bi.main_category_id_chosen)AS main_category_chosen_name,
+                bi.* FROM booking_item_23 bi INNER JOIN main_categories mc ON mc.id = bi.`main_category_id` WHERE bi.id = $visit_id");
+    $row = mysqli_fetch_assoc($q1);
+
+    $term_name = "Service Term - " . $row['visit_number'];
+    $otp = (int) $row['otp'];
+    $main_category_id = (int) $row['main_category_id'];
+    $main_category_name = $row['name'];
+    $main_category_id_chosen = $row['main_category_id_chosen'];
+    $main_category_chosen_name = $row['main_category_chosen_name'];
+    $device_serial_number = $row['device_serial_number'];
+    $booking_id = (int) $row['booking_id'];
+    $rescheduled_count = (int) $row['reschedule_count'];
+    $servicer_reschedule_count = (int) $row['servicer_reschedule_count'];
+    $booking_status = $row['status'];
+    $servicer_status = $row['servicer_status'];
+    $booking_date = $row['date'];
+
+    $getname = mysqli_query($conn,"SELECT u.name FROM user u INNER JOIN booking b ON b.user_id = u.id INNER JOIN booking_item_23 bi ON bi.booking_id = b.id WHERE bi.id=$visit_id");
+    $zzz = mysqli_fetch_assoc($getname);
+    $customer_name = $zzz['name'];
+    $user_address_id = (int) $row['user_address_id'];
+    $q5 = mysqli_query($conn, "SELECT * FROM user_address WHERE id = $user_address_id");
+    $addressDetails = mysqli_fetch_assoc($q5);
+    $user_address_details = array("location" => $addressDetails['location'], "address" => $addressDetails['address'], "latitude" => $addressDetails['latitude'], "longitude" => $addressDetails['longitude'], "zone_id" => (int) $addressDetails['zone_id']);
+
+
+    $slot_id = (int) $row['slot_id'];
+    $q6 = mysqli_query($conn, "SELECT name FROM slot WHERE id = $slot_id");
+    $slotname = mysqli_fetch_assoc($q6);
+    $slot = $slotname['name'];
+
+    $updated = $row['updated'];
+
+    $response['data'] = array(
+        "status" => 1,
+        "message" => "Subscription Term Details",
+        "visit_id" => $visit_id,
+        "term_name" => $term_name,
+        "user_id" => $user_id,
+        "otp" => $otp,
+        "employee_details" => $employeeDetails == NULL ? array() : $employeeDetails,
+        "main_category_id" => $main_category_id,
+        "main_category_name" => $main_category_name,
+        "main_category_id_chosen" => $main_category_id_chosen == NULL ? 0 : (int) $main_category_id_chosen,
+        "main_category_chosen_name" => $main_category_chosen_name == NULL ? '' : $main_category_chosen_name,
+        "device_serial_number" => $device_serial_number == NULL ? '' : $device_serial_number,
+        "booking_id" => $booking_id,
+        "rescheduled_count" => (int) $rescheduled_count,
+        "booking_status" => $booking_status,
+        "servicer_status" => $servicer_status,
+        "booking_date" => $booking_date,
+        "customer_name"=>$customer_name,
+        "customer_address_details" => $user_address_details,
+        "slot" => $slot
+    );
+    echo json_encode($response);
+    die();
 }
