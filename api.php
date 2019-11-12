@@ -5101,6 +5101,7 @@ function viewCart()
 
             $errorData["data"] = array(
                 "status" => 1,
+                "type"=>1,
                 "message" => "cart for the user",
                 "user_id" => (int) $user_id,
                 "cartId" => (int) $cart_row["cartId"],
