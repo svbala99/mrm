@@ -4404,7 +4404,7 @@ function customerApplyWallet()
 
     if ($use_wallet == 'YES') {
         if ($wallet_reduce > 0) {
-            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already applied", "amount_payable"=>$amount_payable);
+            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already applied", "amount_payable"=>$amount_payable, "wallet_reduce"=>$wallet_reduce);
             echo json_encode($errorData);
             die();
         }
@@ -4429,7 +4429,7 @@ function customerApplyWallet()
         $q2 = mysqli_query($conn, "UPDATE booking SET wallet_reduce = $wallet_balance_used, amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id = $user_id");
 
         if ($q1 && $q2) {
-            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance applied successfully", "amount_payable"=>$amount_payable_updated);
+            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance applied successfully", "amount_payable"=>$amount_payable_updated, "wallet_reduce"=>$wallet_balance_used);
             echo json_encode($errorData);
             die();
         } else {
@@ -4602,7 +4602,7 @@ function customerApplyCoupon()
     $xy = mysqli_fetch_assoc($abc);
     $coupon_reduce = (int) $xy['coupon_reduce'];
     if ($coupon_reduce > 0) {
-        $errorData["data"] = array("status" => 0,   "message" => "Already some other coupon is applied");
+        $errorData["data"] = array("status" => 0,   "message" => "Already some other coupon is applied", "coupon_reduce"=>$coupon_reduce);
         echo json_encode($errorData);
         die();
     }
@@ -4612,7 +4612,7 @@ function customerApplyCoupon()
 
     $q1 = mysqli_query($conn, "UPDATE booking SET coupon_reduce = $coupon_amount, coupon = '$coupon_code', amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id='$user_id' ");
     if ($q1) {
-        $response["data"] = array("status" => 1,   "message" => "Coupon applied successfully");
+        $response["data"] = array("status" => 1,   "message" => "Coupon applied successfully", "coupon_reduce"=>$coupon_amount);
         echo json_encode($response);
         die();
     } else {
@@ -6084,8 +6084,11 @@ function viewCustomerBooking()
     $coupondesc = mysqli_fetch_assoc($q4);
     $coupon_description =   $coupondesc['description'];
 
+    
     $coupon_reduce =  (int) $bookingdetails['coupon_reduce'];
+    $coupon_applied = $coupon_reduce==0?"NO":"YES";
     $wallet_reduce =  (int) $bookingdetails['wallet_reduce'];
+    $wallet_applied = $wallet_reduce==0?"NO":"YES";
     $amount_payable =  (int) $bookingdetails['amount_payable'];
 
     $user_address_id =  (int) $bookingdetails['user_address_id'];
@@ -6101,7 +6104,8 @@ function viewCustomerBooking()
 
     $updated = $bookingdetails['updated'];
 
-    $q7 = mysqli_query($conn, "SELECT bi.*, product_title, product_description, mc.name FROM booking_item bi INNER JOIN products p ON bi.product_id = p.id INNER JOIN main_categories mc ON p.category_id = mc.id WHERE booking_id = $booking_id");;
+    $q7 = mysqli_query($conn, "SELECT bi.*, product_title, product_description, mc.name FROM booking_item bi INNER JOIN products p ON bi.product_id = p.id INNER JOIN sub_categories mc ON p.category_id = mc.id WHERE booking_id = $booking_id");
+    
     while ($bookingItem = mysqli_fetch_assoc($q7)) {
         $bookingItemsArray[] = array(
             "bookingItemId" => (int) $bookingItem['id'],
@@ -6131,6 +6135,8 @@ function viewCustomerBooking()
         "tax_percent" => (int) $tax_percent,
         "tax_amount" => (int) $tax_amount,
         "total" => (int) $total,
+        "wallet_applied"=>$wallet_applied,
+        "coupon_applied"=>$coupon_applied,
         "coupon" => $coupon,
         "coupon_description" => $coupon_description,
         "coupon_reduce" => (int) $coupon_reduce,
