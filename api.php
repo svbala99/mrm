@@ -4404,7 +4404,7 @@ function customerApplyWallet()
 
     if ($use_wallet == 'YES') {
         if ($wallet_reduce > 0) {
-            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already applied");
+            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already applied", "amount_payable"=>$amount_payable);
             echo json_encode($errorData);
             die();
         }
@@ -4429,7 +4429,7 @@ function customerApplyWallet()
         $q2 = mysqli_query($conn, "UPDATE booking SET wallet_reduce = $wallet_balance_used, amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id = $user_id");
 
         if ($q1 && $q2) {
-            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance applied successfully");
+            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance applied successfully", "amount_payable"=>$amount_payable_updated);
             echo json_encode($errorData);
             die();
         } else {
@@ -4439,7 +4439,7 @@ function customerApplyWallet()
         }
     } else if ($use_wallet == 'NO') {
         if ($wallet_reduce == 0) {
-            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already removed");
+            $errorData["data"] = array("status" => 0,   "message" => "Wallet balance already removed", "amount_payable"=>$amount_payable);
             echo json_encode($errorData);
             die();
         }
@@ -4453,7 +4453,7 @@ function customerApplyWallet()
         $q2 = mysqli_query($conn, "UPDATE booking SET wallet_reduce = 0, amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id = $user_id");
 
         if ($q1 && $q2) {
-            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance removed successfully");
+            $errorData["data"] = array("status" => 1,   "message" => "Wallet balance removed successfully", "amount_payable"=>$amount_payable_updated);
             echo json_encode($errorData);
             die();
         } else {
