@@ -4601,18 +4601,22 @@ function customerApplyCoupon()
     }
     $xy = mysqli_fetch_assoc($abc);
     $coupon_reduce = (int) $xy['coupon_reduce'];
+    
+    $amount_payable = (int) $xy['amount_payable'];
+    $amount_payable_updated = $amount_payable - $coupon_amount;
+
+
+
     if ($coupon_reduce > 0) {
-        $errorData["data"] = array("status" => 0,   "message" => "Already some other coupon is applied", "coupon_reduce"=>$coupon_reduce);
+        $errorData["data"] = array("status" => 0,   "message" => "Already some other coupon is applied", "coupon_reduce"=>$coupon_reduce, "amount_payable"=>$amount_payable);
         echo json_encode($errorData);
         die();
     }
 
-    $amount_payable = (int) $xy['amount_payable'];
-    $amount_payable_updated = $amount_payable - $coupon_amount;
-
+    
     $q1 = mysqli_query($conn, "UPDATE booking SET coupon_reduce = $coupon_amount, coupon = '$coupon_code', amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id='$user_id' ");
     if ($q1) {
-        $response["data"] = array("status" => 1,   "message" => "Coupon applied successfully", "coupon_reduce"=>$coupon_amount);
+        $response["data"] = array("status" => 1,   "message" => "Coupon applied successfully", "coupon_reduce"=>$coupon_amount, "amount_payable"=>$amount_payable_updated);
         echo json_encode($response);
         die();
     } else {
@@ -4681,20 +4685,22 @@ function customerRemoveCoupon()
     }
     $xy = mysqli_fetch_assoc($abc);
     $coupon_reduce = (int) $xy['coupon_reduce'];
+        $amount_payable = (int) $xy['amount_payable'];
+        
     if ($coupon_reduce == 0) {
-        $errorData["data"] = array("status" => 0,   "message" => "Already coupon is removed");
+        $errorData["data"] = array("status" => 0,   "message" => "Already coupon is removed", "amount_payable"=>$amount_payable);
         echo json_encode($errorData);
         die();
     }
 
-    $amount_payable = (int) $xy['amount_payable'];
+
     $coupon_reduce = (int) $xy['coupon_reduce'];
 
     $amount_payable_updated = $amount_payable + $coupon_reduce;
 
     $q1 = mysqli_query($conn, "UPDATE booking SET coupon_reduce = 0, coupon = NULL, amount_payable = $amount_payable_updated WHERE id = $booking_id AND user_id='$user_id' ");
     if ($q1) {
-        $response["data"] = array("status" => 1,   "message" => "Coupon removed successfully");
+        $response["data"] = array("status" => 1,   "message" => "Coupon removed successfully", "amount_payable"=>$amount_payable_updated);
         echo json_encode($response);
         die();
     } else {
