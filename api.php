@@ -4200,31 +4200,44 @@ function customerChoosePaymentType()
 
     $check = mysqli_query($conn, "SELECT * FROM booking WHERE user_id=$user_id AND id = $booking_id AND servicer_status IN('Completed') AND payment IN('PENDING')");
     if (mysqli_num_rows($check) == 0) {
-        $errorData["data"] = array("status" => 0,   "message" => "Invalid inputs");
+        $errorData["data"] = array("status" => 0,   "message" => "Invalid input or payment made already");
         echo json_encode($errorData);
         die();
     }
-
-    $q1 = mysqli_query($conn, "UPDATE booking SET payment_type = '$payment_type' WHERE user_id=$user_id AND id = $booking_id AND servicer_status IN('Completed') AND payment IN('PENDING') ");
-
-
-    if ($q1) {
-
-        $check = mysqli_query($conn, "SELECT * FROM `booking` WHERE id=$booking_id AND payment_type='' ");
-        if (mysqli_num_rows($check)) {
-            $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed. Server error!");
-            echo json_encode($errorData);
-            die();
-        }
-
-        $errorData["data"] = array("status" => 1,   "message" => "Payment type chosen successfully");
-        echo json_encode($errorData);
-        die();
-    } else {
-        $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed. Server error!");
-        echo json_encode($errorData);
-        die();
+    
+    if($payment_type=="CASH"){
+                $q1 = mysqli_query($conn, "UPDATE booking SET payment_type = 'CASH', payment = 'COMPLETED' WHERE user_id=$user_id AND id = $booking_id AND servicer_status IN('Completed') AND payment IN('PENDING') ");
+                if ($q1) {
+                    $errorData["data"] = array("status" => 1,   "message" => "Payment made by CASH MODE successfully");
+                    echo json_encode($errorData);
+                    die();
+                }
+                else {
+                    $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed; Invalid input or payment made already");
+                    echo json_encode($errorData);
+                    die();
+                }    
     }
+    if($payment_type=="ONLINE"){
+                $q1 = mysqli_query($conn, "UPDATE booking SET payment_type = 'ONLINE'  WHERE user_id=$user_id AND id = $booking_id AND servicer_status IN('Completed') AND payment IN('PENDING') ");
+                if ($q1) {
+                    $errorData["data"] = array("status" => 1,   "message" => "Payment type - ONLINE - chosen successfully");
+                    echo json_encode($errorData);
+                    die();
+                }
+                else {
+                    $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed; Invalid input or payment made already");
+                    echo json_encode($errorData);
+                    die();
+                }    
+    }
+    else{
+                    $errorData["data"] = array("status" => 0,   "message" => "Payment type choosing failed; Only ONLINE or CASH is accepted");
+                    echo json_encode($errorData);
+                    die();
+    }
+
+    
 }
 
 
@@ -5102,7 +5115,15 @@ function viewCart()
                 WHERE cart_item.cart_id = $cart_id");
 
             while ($cart_item_row = mysqli_fetch_assoc($cart_items_result)) {
-                $cart_items[] = $cart_item_row;
+                $cart_items[] = array(
+                    "cartItemId"=>(int)$cart_item_row['cartItemId'],
+                    "productId"=>(int)$cart_item_row['productId'],
+                    "productTitle"=>$cart_item_row['productTitle'],
+                    "productDescription"=>$cart_item_row['productDescription'],
+                    "mainCategoryName"=>$cart_item_row['mainCategoryName'],
+                    "count"=>(int)$cart_item_row['count'],
+                    "price"=>(int)$cart_item_row['price']
+                    );
             }
 
             $errorData["data"] = array(
@@ -8258,17 +8279,19 @@ function employeeJobHistory(){
     //END oF BLOCKED
     checkEmployeeId($conn, $emp_id);
 
-    $q1 = mysqli_query($conn, "SELECT b.id  as booking_id, b.status, b.payment_type, b.user_address_id, ua.address, u.id, u.name FROM `booking` b
+    $q1 = mysqli_query($conn, "SELECT b.date as booking_date, b.id  as booking_id, b.status, b.payment_type, b.user_address_id, ua.address, u.id, u.name FROM `booking` b
                                     INNER JOIN user u  ON u.id = b.user_id
                                     INNER JOIN user_address ua ON ua.id = b.user_address_id
-                                    WHERE emp_id=$emp_id");
+                                    WHERE emp_id=$emp_id
+                              		ORDER BY b.date DESC      ");
     if (mysqli_num_rows($q1) == 0) {
         $jobHistory1 = array();
     }    
     while($row = mysqli_fetch_assoc($q1)){
         $jobHistory1[] = array(
-                "type"=>"Normal Booking",
+                "type"=>1,
                 "bookingId"=>(int)$row['booking_id'],
+                "booking_date"=>$row['booking_date'],
                 "booking_status"=>$row['status'],
                 "customer_name"=>$row['name'],
                 "customer_address"=>$row['address'],
@@ -8276,19 +8299,21 @@ function employeeJobHistory(){
             );
     }
     
-    $q2 = mysqli_query($conn, "SELECT b.id as visit_id, bb.id as booking_id, b.status, ua.address, u.name FROM `booking_item_23` b
+    $q2 = mysqli_query($conn, "SELECT b.date as booking_date,  b.id as visit_id, bb.id as booking_id, b.status, ua.address, u.name FROM `booking_item_23` b
 									INNER JOIN booking bb ON b.booking_id = bb.id
                                     INNER JOIN user u  ON u.id = bb.user_id
                                     INNER JOIN user_address ua ON ua.id = b.user_address_id
-                                    WHERE b.emp_id=$emp_id");
+                                    WHERE b.emp_id=$emp_id
+                                    ORDER BY b.date DESC      ");
                                     
     if (mysqli_num_rows($q2)==0) {
         $jobHistory2 = array();
     }    
     while($row2 = mysqli_fetch_assoc($q2)){
         $jobHistory2[] = array(
-                "type"=>"Service Term Booking",
+                "type"=>2,
                 "bookingId"=>(int)$row2['booking_id'],
+                "booking_date"=>$row2['booking_date'],
                 "visit_id"=>(int)$row2['visit_id'],
                 "booking_status"=>$row2['status'],
                 "customer_name"=>$row2['name'],
@@ -8296,8 +8321,19 @@ function employeeJobHistory(){
                 "payment_type"=>$row['payment_type']==NULL?'':$row['payment_type']
             );
     }
+    $job_history = array_merge($jobHistory1, $jobHistory2);
     
-    $response['data'] = array("status"=>1, "message"=>"Job history for emp_id : $emp_id", "job_history"=>array("normal_booking"=>$jobHistory1, "service_term_booking"=>$jobHistory2));
+    function sortFunction( $a, $b ) {
+        return strtotime($b["booking_date"]) - strtotime($a["booking_date"]);
+    }
+    usort($job_history, "sortFunction");
+    
+    $result = array();
+    foreach ($job_history as $element) {
+        $result[$element['booking_date']][] = $element;
+    }
+    
+    $response['data'] = array("status"=>1, "message"=>"Job history for emp_id : $emp_id", "job_history"=>$result);
     echo json_encode($response);
     die();
     
@@ -8496,4 +8532,89 @@ function servicerViewSingleTerm(){
     );
     echo json_encode($response);
     die();
+}
+
+
+function customerRazorPay(){
+
+    $conn = $GLOBALS['conn'];
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['user_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No user_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+
+    if (!isset($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    if (empty($input['booking_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No booking_id is supplied");
+        echo json_encode($errorData);
+
+        die();
+    }
+    
+    if (!isset($input['razor_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No razor_id is supplied; payment failed");
+        echo json_encode($errorData);
+        die();
+    }
+    if (empty($input['razor_id'])) {
+        $errorData["data"] = array("status" => 0,   "message" => "No razor_id is supplied; payment failed");
+        echo json_encode($errorData);
+        die();
+    }
+    
+
+    $user_id = (int) $input['user_id'];
+    $booking_id = (int) $input['booking_id'];
+    $razor_id = $input['razor_id'];
+    
+    
+
+    //CHECK FOR BLOCKED CUSTOMER
+    $checkk = mysqli_query($conn, "SELECT * FROM user WHERE id='$user_id' AND account_status IN('BLOCKED','INACTIVE')  ");
+    if (mysqli_num_rows($checkk) > 0) {
+        $errorData["data"] = array("status" => 0,   "message" => "This customer Account is Blocked or Inactive");
+        echo json_encode($errorData);
+        die();
+    }
+    //END oF BLOCKED
+    validateUserId($conn, $user_id);
+
+    validateuserIdBookingId($conn, $user_id, $booking_id);      
+    
+    $checkpaid = mysqli_query($conn, "SELECT id FROM booking WHERE id =$booking_id AND user_id=$user_id AND amount_payable>0 AND status = 'COMPLETED'
+                                        AND servicer_status = 'Completed' AND payment = 'PENDING' AND payment_type = 'ONLINE'");
+   if (mysqli_num_rows($checkpaid)==0) {
+        $errorData["data"] = array("status" => 0,   "message" => "Cannot pay for this booking_id with given input");
+        echo json_encode($errorData);
+        die();
+    }
+    
+    $update = mysqli_query($conn, "UPDATE booking SET payment = 'COMPLETED', razor_id = '$razor_id' WHERE id =$booking_id AND user_id=$user_id ");
+    
+    if($update){
+        $errorData["data"] = array("status" => 1,   "message" => "Payment made by ONLINE MODE successfully");
+        echo json_encode($errorData);
+        die();
+    }
+    else{
+        $errorData["data"] = array("status" => 0,   "message" => "Internal server error");
+        echo json_encode($errorData);
+        die();
+    }
+    
 }
